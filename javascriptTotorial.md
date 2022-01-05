@@ -1012,4 +1012,362 @@ function myFunction() {
 }
 myFunction();
 
+## JavaScript Sets
+A JavaScript Set is a collection of unique values.
+
+Each value can only occur once in a Set.
+
+Example
+// Create a Set
+const letters = new Set(["a","b","c"]);
+
+### Set Methods
+Method	Description
+new Set()	Creates a new Set
+add()	Adds a new element to the Set
+delete()	Removes an element from a Set
+has()	Returns true if a value exists
+clear()	Removes all elements from a Set
+forEach()	Invokes a callback for each element
+values()	Returns an Iterator with all the values in a Set
+keys()	Same as values()
+entries()	Returns an Iterator with the [value,value] pairs from a Set
+Property	Description
+size	Returns the number elements in a Set
+
+## JavaScript Maps
+A Map holds key-value pairs where the keys can be any datatype.
+
+A Map remembers the original insertion order of the keys
+const fruits = new Map([
+  ["apples", 500],
+  ["bananas", 300],
+  ["oranges", 200]
+]);
+
+### Map Methods
+Method	Description
+new Map()	Creates a new Map object
+set()	Sets the value for a key in a Map
+get()	Gets the value for a key in a Map
+clear()	Removes all the elements from a Map
+delete()	Removes a Map element specified by a key
+has()	Returns true if a key exists in a Map
+forEach()	Invokes a callback for each key/value pair in a Map
+entries()	Returns an iterator object with the [key, value] pairs in a Map
+keys()	Returns an iterator object with the keys in a Map
+values()	Returns an iterator object of the values in a Map
+
 # The JavaScript this Keyword
+
+## What is this?
+The JavaScript this keyword refers to the object it belongs to.
+
+It has different values depending on where it is used:
+
+In a method, this refers to the owner object.
+Alone, this refers to the global object.
+In a function, this refers to the global object.
+In a function, in strict mode, this is undefined.
+In an event, this refers to the element that received the event.
+Methods like call(), and apply() can refer this to any object.
+
+## this in Event Handlers
+In HTML event handlers, this refers to the HTML element that received the event:
+
+Example
+<button onclick="this.style.display='none'">
+  Click to Remove Me!
+</button>
+
+## JavaScript Arrow Function
+Arrow functions were introduced in ES6.
+
+Arrow functions allow us to write shorter function syntax:
+
+let myFunction = (a, b) => a * b;
+
+## JavaScript Classes
+ECMAScript 2015, also known as ES6, introduced JavaScript Classes.
+
+JavaScript Classes are templates for JavaScript Objects.
+
+Example
+class Car {
+  constructor(name, year) {
+    this.name = name;
+    this.year = year;
+  }
+}
+
+Using a Class
+When you have a class, you can use the class to create objects:
+
+Example
+let myCar1 = new Car("Ford", 2014);
+
+### The Constructor Method
+The constructor method is a special method:
+
+It has to have the exact name "constructor"
+It is executed automatically when a new object is created
+It is used to initialize object properties
+If you do not define a constructor method, JavaScript will add an empty constructor method.
+
+## JavaScript JSON
+JSON is a format for storing and transporting data.
+
+JSON is often used when data is sent from a server to a web page
+## What is JSON?
+JSON stands for JavaScript Object Notation
+JSON is a lightweight data interchange format
+JSON is language independent *
+JSON is "self-describing" and easy to understand
+* The JSON syntax is derived from JavaScript object notation syntax, but the JSON format is text only. Code for reading and generating JSON data can be written in any programming language
+
+### JSON Example
+This JSON syntax defines an employees object: an array of 3 employee records (objects):
+
+JSON Example
+{
+"employees":[
+  {"firstName":"John", "lastName":"Doe"},
+  {"firstName":"Anna", "lastName":"Smith"},
+  {"firstName":"Peter", "lastName":"Jones"}
+]
+}
+
+## JavaScript Primitives
+A primitive value is a value that has no properties or methods.
+
+A primitive data type is data that has a primitive value.
+
+JavaScript defines 5 types of primitive data types:
+
+string
+number
+boolean
+null
+undefined
+Primitive values are immutable (they are hardcoded and therefore cannot be changed).
+
+## Functions are Objects
+The typeof operator in JavaScript returns "function" for functions.
+
+But, JavaScript functions can best be described as objects.
+
+JavaScript functions have both properties and methods.
+
+The arguments.length property returns the number of arguments received when the function was invoked (call):
+
+Example
+function myFunction(a, b) {
+  return arguments.length;
+}
+
+If a function is called with too many arguments (more than declared), these arguments can be reached using the arguments object.
+
+function sumAll() {
+  let sum = 0;
+  for (let i = 0; i < arguments.length; i++) {
+    sum += arguments[i];
+  }
+  return sum;
+}
+
+## The JavaScript call() Method
+The call() method is a predefined JavaScript method.
+
+It can be used to invoke (call) a method with an owner object as an argument (parameter).
+
+With call(), an object can use a method belonging to another object.
+
+This example calls the fullName method of person, using it on person1:
+
+Example
+const person = {
+  fullName: function() {
+    return this.firstName + " " + this.lastName;
+  }
+}
+const person1 = {
+  firstName:"John",
+  lastName: "Doe"
+}
+const person2 = {
+  firstName:"Mary",
+  lastName: "Doe"
+}
+
+// This will return "John Doe":
+person.fullName.call(person1);
+
+## The JavaScript apply() Method
+The apply() method is similar to the call() method (previous chapter).
+## The Difference Between call() and apply()
+The difference is:
+
+The call() method takes arguments separately.
+
+The apply() method takes arguments as an array.
+
+### The apply() Method with Arguments
+The apply() method accepts arguments in an array:
+
+Example
+const person = {
+  fullName: function(city, country) {
+    return this.firstName + " " + this.lastName + "," + city + "," + country;
+  }
+}
+
+const person1 = {
+  firstName:"John",
+  lastName: "Doe"
+}
+
+person.fullName.apply(person1, ["Oslo", "Norway"]);
+
+
+# JavaScript Closures
+JavaScript variables can belong to the local or global scope.
+
+Global variables can be made local (private) with closures.
+
+### Variable Lifetime
+Global variables live until the page is discarded, like when you navigate to another page or close the window.
+
+Local variables have short lives. They are created when the function is invoked, and deleted when the function is finished.
+
+## JavaScript Closures
+Remember self-invoking / self-call functions? What does this function do?
+
+Example
+const add = (function () {
+  let counter = 0;
+  return function () {counter += 1; return counter}
+})();
+
+add();
+add();
+add();
+
+// the counter is now 3
+Example Explained
+The variable add is assigned to the return value of a self-invoking function.
+
+The self-invoking function only runs once. It sets the counter to zero (0), and returns a function expression.
+
+This way add becomes a function. The "wonderful" part is that it can access the counter in the parent scope.
+
+This is called a JavaScript closure. It makes it possible for a function to have "private" variables.
+
+The counter is protected by the scope of the anonymous function, and can only be changed using the add function.
+
+A closure is a function having access to the parent scope, even after the parent function has closed.
+
+## JavaScript Static Methods
+Static class methods are defined on the class itself.
+
+You cannot call a static method on an object, only on an object class.
+
+Example
+class Car {
+  constructor(name) {
+    this.name = name;
+  }
+  static hello() {
+    return "Hello!!";
+  }
+}
+
+let myCar = new Car("Ford");
+
+// You can call 'hello()' on the Car Class:
+document.getElementById("demo").innerHTML = Car.hello();
+
+// But NOT on a Car Object:
+// document.getElementById("demo").innerHTML = myCar.hello();
+// this will raise an error.
+
+#### If you want to use the myCar object inside the static method, you can send it as a parameter:
+
+Example
+class Car {
+  constructor(name) {
+    this.name = name;
+  }
+  static hello(x) {
+    return "Hello " + x.name;
+  }
+}
+let myCar = new Car("Ford");
+document.getElementById("demo").innerHTML = Car.hello(myCar);
+
+## Asynchronous JavaScript
+"I will finish later!"
+
+Functions running in parallel with other functions are called asynchronous
+
+# JavaScript Promises
+JavaScript Promises
+"I Promise a Result!"
+
+"Producing code" is code that can take some time
+
+"Consuming code" is code that must wait for the result
+
+A Promise is a JavaScript object that links producing code and consuming code
+
+## JavaScript Async
+"async and await make promises easier to write"
+
+async makes a function return a Promise
+
+await makes a function wait for a Promise
+
+## JavaScript HTML DOM EventListener
+document.getElementById("myBtn").addEventListener("click", displayDate);
+syntax
+element.addEventListener("click", CalbackFunction);
+
+## Other Window Methods
+Some other methods:
+
+window.open() - open a new window
+window.close() - close the current window
+window.moveTo() - move the current window
+window.resizeTo() - resize the current window
+
+## Window Screen
+The window.screen object can be written without the window prefix.
+
+Properties:
+
+screen.width
+screen.height
+screen.availWidth
+screen.availHeight
+screen.colorDepth
+screen.pixelDepth
+
+## JavaScript Window Location
+The window.location object can be used to get the current page address (URL) and to redirect the browser to a new page.
+
+Window Location
+The window.location object can be written without the window prefix.
+
+Some examples:
+
+window.location.href returns the href (URL) of the current page
+window.location.hostname returns the domain name of the web host
+window.location.pathname returns the path and filename of the current page
+window.location.protocol returns the web protocol used (http: or https:)
+window.location.assign() loads a new document
+
+# AJAX Introduction
+AJAX is a developer's dream, because you can:
+
+Read data from a web server - after the page has loaded
+Update a web page without reloading the page
+Send data to a web server - in the background
