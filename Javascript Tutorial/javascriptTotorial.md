@@ -1371,3 +1371,6 @@ AJAX is a developer's dream, because you can:
 Read data from a web server - after the page has loaded
 Update a web page without reloading the page
 Send data to a web server - in the background
+
+## Plotly.js
+Plotly.js is a charting library that comes with over 40 chart types, 3D charts, statistical graphs, and SVG maps.
