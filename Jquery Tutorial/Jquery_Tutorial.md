@@ -646,6 +646,8 @@ jQuery(document).ready(function($){
 
 #### Filter Tables
 Perform a case-insensitive search for items in a table:
+```
+
 <script>
 $(document).ready(function(){
   $("#myInput").on("keyup", function() {
@@ -656,4 +658,6 @@ $(document).ready(function(){
   });
 });
 </script>
+
+```
 
