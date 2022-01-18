@@ -56,7 +56,7 @@ An expression is a combination of values, variables, and operators, which comput
 
 The computation is called an evaluation.
 
-For example, 5 * 10 evaluates to 50:
+For example, ``` 5 * 10 ``` evaluates to 50:
 
 # JavaScript Comments
 Not all JavaScript statements are "executed".
@@ -100,9 +100,11 @@ If you think the value of the variable can not change, use const.
 # You cannot re-declare a variable declared with let or const.
 
 This will not work:
-
+```
 let carName = "Volvo";
 let carName;
+
+```
 
 # let keyword
 
@@ -125,10 +127,12 @@ These two keywords provide Block Scope in JavaScript.
 Variables declared inside a { } block cannot be accessed from outside the block:
 
 Example
+```
 {
   let x = 2;
 }
 
+```
 
 # Const variable
 
@@ -161,30 +165,38 @@ To find the length of a string, use the built-in length property:
 
 # JavaScript Strings as Objects
 Normally, JavaScript strings are primitive values, created from literals:
+```
 let x = "John"; // string
 let y = new String("John"); //object
+
+```
 Comparing two JavaScript objects always returns false.
 
 # JavaScript String Methods
 
 ## Extracting String Parts
 There are 3 methods for extracting a part of a string:
-
+```
 slice(start, end)
 substring(start, end)
 substr(start, length)
 
+```
 ## JavaScript String slice()
 slice() extracts a part of a string and returns the extracted part in a new string.
 
 The method takes 2 parameters: the start position, and the end position (end not included).
 
 This example slices out a portion of a string from position 7 to position 12 (13-1):
-
+```
 let str = "Apple, Banana, Kiwi";
 let part = str.slice(7, 13);
-
+```
+```
 Output "Banana"
+
+```
+
 If a parameter is negative, the position is counted from the end of the string.
 If you omit the second parameter, the method will slice out the rest of the string:
 
@@ -215,79 +227,93 @@ To replace all matches, use a regular expression with a /g flag (global match):
 A string is converted to upper case with toUpperCase():
 
 A string is converted to lower case with toLowerCase():
+```
 let text1 = "Hello World!";       // String
 let text2 = text1.toLowerCase(); 
-
+```
 # JavaScript String concat()
 concat() joins two or more strings:
+```
 let text1 = "Hello";
 let text2 = "World";
 let text3 = text1.concat(" ", text2);
+
+```
 
 # JavaScript String trim()
 The trim() method removes whitespace from both sides of a string:
 
 # JavaScript String Padding
 ECMAScript 2017 added two String methods: padStart and padEnd to support padding at the beginning and at the end of a string.
+```
 let text = "5";
 let padded = text.padStart(4,0);
 
  // output = 0005
-
+```
  # JavaScript String charAt()
 The charAt() method returns the character at a specified index (position) in a string:
-
+```
 Example
 let text = "HELLO WORLD";
 let char = text.charAt(0);
 
 // output H
 
+```
 # JavaScript String charCodeAt()
 The charCodeAt() method returns the unicode of the character at a specified index in a string:
 
 The method returns a UTF-16 code (an integer between 0 and 65535).
 
 Example
+```
 let text = "HELLO WORLD";
 let char = text.charCodeAt(0);
 
+```
 # JavaScript String split()
 A string can be converted to an array with the split() method:
 
 Example
+```
 text.split(",")    // Split on commas
 text.split(" ")    // Split on spaces
 text.split("|")    // Split on pipe
 text.split("")    //Split on  single characters
 
-
+```
 # JavaScript String Search
 
 ## JavaScript Search Methods
+```
 String indexOf()
 String lastIndexOf()
 String startsWith()
 String endsWith()
 
+```
+
 ## JavaScript String indexOf()
 The indexOf() method returns the index of (the position of) the first occurrence of a specified text in a string:
 
 Example
+```
 let str = "Please locate where 'locate' occurs!";
 str.indexOf("locate");
 
 // Output = 7
-
+```
 ## JavaScript String lastIndexOf()
 The lastIndexOf() method returns the index of the last occurrence of a specified text in a string:
 
 Example
+```
 let str = "Please locate where 'locate' occurs!";
 str.lastIndexOf("locate");
 
 // Output = 21
-
+```
 Both indexOf(), and lastIndexOf() return -1 if the text is not found:
 Both methods accept a second parameter as the starting position for the search:
 
@@ -305,44 +331,48 @@ The indexOf() method cannot take powerful search values (regular expressions).
 The match() method searches a string for a match against a regular expression, and returns the matches, as an Array object.
 
 Example 1
+```
 Search a string for "ain":
 
 let text = "The rain in SPAIN stays mainly in the plain";
 text.match(/ain/g);
-
+```
 ## javaScript String includes()
 The includes() method returns true if a string contains a specified value.
 
 Example
+```
 let text = "Hello world, welcome to the universe.";
 text.includes("world"); // output true
-
+```
 Check if a string includes "world", starting the search at position 12:
-
+```
 let text = "Hello world, welcome to the universe.";
 text.includes("world", 12); // output false
-
+```
 ## JavaScript String startsWith()
 The startsWith() method returns true if a string begins with a specified value, otherwise false:
 
 Example
+```
 let text = "Hello world, welcome to the universe.";
 
 text.startsWith("Hello");
 Syntax
 string.startsWith(searchvalue, start)
-
+```
 ## JavaScript String endsWith()
 The endsWith() method returns true if a string ends with a specified value, otherwise false:
 
 Example
 Check if a string ends with "Doe":
-
+```
 var text = "John Doe";
 text.endsWith("Doe");
 Syntax
 string.endswith(searchvalue, length)
 
+```
 ## Back-Tics Syntax
 Template Literals use back-ticks (``) rather than the quotes ("") to define a string:
 
@@ -354,7 +384,7 @@ Arrays are a special type of objects. The typeof operator in JavaScript returns 
 But, JavaScript arrays are best described as arrays.
 
 ### Array.forEach()
-
+```
 const fruits = ["Banana", "Orange", "Apple", "Mango"];
 
 let text = "<ul>";
@@ -364,13 +394,13 @@ text += "</ul>";
 function myFunction(value) {
   text += "<li>" + value + "</li>";
 }
-
+```
 ## Adding Array Elements
 The easiest way to add a new element to an array is using the push() method:
-
+```
 const fruits = ["Banana", "Orange", "Apple"];
 fruits.push("Lemon"); 
-
+```
 ## Associative Arrays
 Many programming languages support arrays with named indexes.
 
@@ -396,53 +426,62 @@ JavaScript has a built in array constructor new Array().
 But you can safely use [] instead.
 
 These two different statements both create a new empty array named points:
-
+```
 const points = new Array();
 const points = [];
-
+```
 ## How to Recognize an Array
 A common question is: How do I know if a variable is an array?
 
 The problem is that the JavaScript operator typeof returns "object":
 
 To solve this problem ECMAScript 5 (JavaScript 2009) defined a new method Array.isArray():
+```
 Array.isArray(fruits);
-
+```
 # JavaScript Array Methods
 
 ## Converting Arrays to Strings
 
 The join() method also joins all array elements into a string.
+```
 fruits.join(" * ")
-
+```
 ## Popping and Pushing
 
 const fruits = ["Banana", "Orange", "Apple", "Mango"];
+```
 fruits.pop();
 fruits.push("newF);
-
+```
 ## JavaScript Array shift()
 The shift() method removes the first array element and "shifts" all other elements to a lower index.
 
 Example
+```
 const fruits = ["Banana", "Orange", "Apple", "Mango"];
 fruits.shift();
-
+```
 ## JavaScript Array unshift()
 The unshift() method adds a new element to an array (at the beginning), and "unshifts" older elements:
 
 Example
+```
 const fruits = ["Banana", "Orange", "Apple", "Mango"];
 fruits.unshift("Lemon");
-
+```
 ## Merging (Concatenating) Arrays
 The concat() method creates a new array by merging (concatenating) existing arrays:
 
 Example (Merging Two Arrays)
+```
 const myGirls = ["Cecilie", "Lone"];
 const myBoys = ["Emil", "Tobias", "Linus"];
 
 const myChildren = myGirls.concat(myBoys);
+
+```
+
 The concat() method can take any number of array arguments:
 The concat() method can also take strings as arguments:
 
@@ -450,8 +489,10 @@ The concat() method can also take strings as arguments:
 The splice() method can be used to add new items to an array:
 
 Example
+```
 const fruits = ["Banana", "Orange", "Apple", "Mango"];
 fruits.splice(2, 0, "Lemon", "Kiwi");
+```
 The first parameter (2) defines the position where new elements should be added (spliced in).
 
 The second parameter (0) defines how many elements should be removed.
@@ -462,8 +503,10 @@ The rest of the parameters ("Lemon" , "Kiwi") define the new elements to be adde
 With clever parameter setting, you can use splice() to remove elements without leaving "holes" in the array:
 
 Example
+```
 const fruits = ["Banana", "Orange", "Apple", "Mango"];
 fruits.splice(0, 1);
+```
 The first parameter (0) defines the position where new elements should be added (spliced in).
 
 The second parameter (1) defines how many elements should be removed.
@@ -476,8 +519,10 @@ The slice() method slices out a piece of an array into a new array.
 This example slices out a part of an array starting from array element 1 ("Orange"):
 
 Example
+```
 const fruits = ["Banana", "Orange", "Lemon", "Apple", "Mango"];
 const citrus = fruits.slice(1);
+```
 If the end argument is omitted, like in the first examples, the slice() method slices out the rest of the array.
 
 ## JavaScript Sorting Arrays
@@ -485,8 +530,10 @@ If the end argument is omitted, like in the first examples, the slice() method s
 The sort() method sorts an array alphabetically:
 
 Example
+```
 const fruits = ["Banana", "Orange", "Apple", "Mango"];
 fruits.sort();
+```
 
 ## Reversing an Array
 The reverse() method reverses the elements in an array.
@@ -494,28 +541,31 @@ The reverse() method reverses the elements in an array.
 You can use it to sort an array in descending order:
 
 Example
+```
 const fruits = ["Banana", "Orange", "Apple", "Mango"];
 fruits.reverse();
-
+```
 ## Numeric Sort
-
+```
 const points = [40, 100, 1, 5, 25, 10];
 points.sort(function(a, b){return a - b});
-
+```
 ## Sorting Object Arrays
 JavaScript arrays often contain objects:
 
 Example
+```
 const cars = [
   {type:"Volvo", year:2016},
   {type:"Saab", year:2001},
   {type:"BMW", year:2010}
 ];
 cars.sort(function(a, b){return a.year - b.year});
-
+```
 Comparing string properties is a little more complex:
 
 Example
+```
 cars.sort(function(a, b){
   let x = a.type.toLowerCase();
   let y = b.type.toLowerCase();
@@ -523,13 +573,14 @@ cars.sort(function(a, b){
   if (x > y) {return 1;}
   return 0;
 });
-
+```
 # JavaScript Array Iteration
 
 ## JavaScript Array forEach()
 The forEach() method calls a function (a callback function) once for each array element.
 
 Example
+```
 const numbers = [45, 4, 9, 16, 25];
 let txt = "";
 numbers.forEach(myFunction);
@@ -537,7 +588,7 @@ numbers.forEach(myFunction);
 function myFunction(value, index, array) {
   txt += value + "<br>";
 }
-
+```
 ## JavaScript Array map()
 The map() method creates a new array by performing a function on each array element.
 
@@ -548,26 +599,28 @@ The map() method does not change the original array.
 This example multiplies each array value by 2:
 
 Example
+```
 const numbers1 = [45, 4, 9, 16, 25];
 const numbers2 = numbers1.map(myFunction);
 
 function myFunction(value, index, array) {
   return value * 2;
 }
-
-JavaScript Array filter()
+```
+#### JavaScript Array filter()
 The filter() method creates a new array with array elements that passes a test.
 
 This example creates a new array from elements with a value larger than 18:
 
 Example
+```
 const numbers = [45, 4, 9, 16, 25];
 const over18 = numbers.filter(myFunction);
 
 function myFunction(value, index, array) {
   return value > 18;
 }
-
+```
 ## JavaScript Array reduce()
 The reduce() method runs a function on each array element to produce (reduce it to) a single value.
 
@@ -578,22 +631,25 @@ The reduce() method does not reduce the original array.
 This example finds the sum of all numbers in an array:
 
 Example
+```
 const numbers = [45, 4, 9, 16, 25];
 let sum = numbers.reduce(myFunction);
 
 function myFunction(total, value, index, array) {
   return total + value;
 }
-The reduce() method can accept an initial value:
+```
+#### The reduce() method can accept an initial value:
 
 Example
+```
 const numbers = [45, 4, 9, 16, 25];
 let sum = numbers.reduce(myFunction, 100);
 
 function myFunction(total, value) {
   return total + value;
 }
-
+```
 ## JavaScript Array reduceRight()
 The reduceRight() method runs a function on each array element to produce (reduce it to) a single value.
 
@@ -604,39 +660,42 @@ The reduceRight() method does not reduce the original array.
 This example finds the sum of all numbers in an array:
 
 Example
+```
 const numbers = [45, 4, 9, 16, 25];
 let sum = numbers1.reduceRight(myFunction);
 
 function myFunction(total, value, index, array) {
   return total + value;
 }
-
+```
 ## JavaScript Array every()
 The every() method check if all array values pass a test.
 
 This example check if all array values are larger than 18:
 
 Example
+```
 const numbers = [45, 4, 9, 16, 25];
 let allOver18 = numbers.every(myFunction);
 
 function myFunction(value, index, array) {
   return value > 18;
 }
-
+```
 ## JavaScript Array some()
 The some() method check if some array values pass a test.
 
 This example check if some array values are larger than 18:
 
 Example
+```
 const numbers = [45, 4, 9, 16, 25];
 let someOver18 = numbers.some(myFunction);
 
 function myFunction(value, index, array) {
   return value > 18;
 }
-
+```
 ## JavaScript Array indexOf()
 The indexOf() method searches an array for an element value and returns its position.
 
@@ -644,87 +703,90 @@ Note: The first item has position 0, the second item has position 1, and so on.
 
 Example
 Search an array for the item "Apple":
-
+```
 const fruits = ["Apple", "Orange", "Apple", "Mango"];
 let position = fruits.indexOf("Apple") + 1;
 
 Syntax
 array.indexOf(item, start)
-
+```
 ## JavaScript Array lastIndexOf()
 Array.lastIndexOf() is the same as Array.indexOf(), but returns the position of the last occurrence of the specified element.
 
 Example
 Search an array for the item "Apple":
-
+```
 const fruits = ["Apple", "Orange", "Apple", "Mango"];
 let position = fruits.lastIndexOf("Apple") + 1;
-
+```
 ## JavaScript Array find()
 The find() method returns the value of the first array element that passes a test function.
 
 This example finds (returns the value of) the first element that is larger than 18:
 
 Example
+```
 const numbers = [4, 9, 16, 25, 29];
 let first = numbers.find(myFunction);
 
 function myFunction(value, index, array) {
   return value > 18;
 }
-
+```
 ## JavaScript Array findIndex()
 The findIndex() method returns the index of the first array element that passes a test function.
 
 This example finds the index of the first element that is larger than 18:
 
 Example
+```
 const numbers = [4, 9, 16, 25, 29];
 let first = numbers.findIndex(myFunction);
 
 function myFunction(value, index, array) {
   return value > 18;
 }
-
+```
 ## JavaScript Array.from()
 The Array.from() method returns an Array object from any object with a length property or any iterable object.
 
 Example
 Create an Array from a String:
-
+```
 Array.from("ABCDEFG");
-
+```
 ## JavaScript Array Keys()
 The Array.keys() method returns an Array Iterator object with the keys of an array.
 
 Example
 Create an Array Iterator object, containing the keys of the array:
-
+```
 const fruits = ["Banana", "Orange", "Apple", "Mango"];
 const keys = fruits.keys();
 
 for (let x of keys) {
   text += x + "<br>";
 }
-
+```
 ## JavaScript Array includes()
 ECMAScript 2016 introduced Array.includes() to arrays. This allows us to check if an element is present in an array (including NaN, unlike indexOf).
 
 Example
+```
 const fruits = ["Banana", "Orange", "Apple", "Mango"];
 
 fruits.includes("Mango"); // is true
-
+```
 ## Creating Date Objects
 Date objects are created with the new Date() constructor.
 
 There are 4 ways to create a new date object:
-
+```
 new Date()
 new Date(year, month, day, hours, minutes, seconds, milliseconds)
 new Date(milliseconds)
 new Date(date string)
-
+```
 ## Number to Integer
 There are 4 common methods to round a number to an integer:
 
@@ -746,24 +808,27 @@ Math.abs(x) returns the absolute (positive) value of x:
 Math.sqrt(x) returns the square root of x:
 
 Example
+```
 Math.sqrt(64);
-
+```
 ## Math.abs()
 Math.abs(x) returns the absolute (positive) value of x:
 
 Example
+```
 Math.abs(-4.7);
-
+```
 ## A Proper Random Function
 As you can see from the examples above, it might be a good idea to create a proper random function to use for all random integer purposes.
 
 This JavaScript function always returns a random number between min (included) and max (excluded):
 
 Example
+```
 function getRndInteger(min, max) {
   return Math.floor(Math.random() * (max - min) ) + min;
 }
-
+```
 ## Primitive Data
 A primitive data value is a single simple data value with no additional properties and methods.
 
@@ -810,9 +875,9 @@ A regular expression can be a single character, or a more complicated pattern.
 
 Regular expressions can be used to perform all types of text search and text replace operations.
 Example explained:
-
+```
 /w3schools/i  is a regular expression.
-
+```
 w3schools  is a pattern (to be used in a search).
 
 i  is a modifier (modifies the search to be case-insensitive).
@@ -846,9 +911,11 @@ These two keywords provide Block Scope in JavaScript.
 Variables declared inside a { } block cannot be accessed from outside the block:
 
 Example
+```
 {
   let x = 2;
 }
+```
 Variables declared with the var keyword can NOT have block scope.
 Variables declared inside a { } block can be accessed from outside the block.
 
@@ -856,13 +923,14 @@ Variables declared inside a { } block can be accessed from outside the block.
 Variables declared within a JavaScript function, become LOCAL to the function.
 
 Example
+```
 // code here can NOT use carName
 
 function myFunction() {
   let carName = "Volvo";
   // code here CAN use carName
 }
-
+```
 Local variables have Function Scope:
 They can only be accessed from within the function.
 
@@ -874,21 +942,23 @@ Variables defined inside a function are not accessible (visible) from outside th
 Variables declared with var, let and const are quite similar when declared inside a function.
 
 They all have Function Scope:
-
+```
 function myFunction() {
   var carName = "Volvo";   // Function Scope
 }
-
+```
 ## Global JavaScript Variables
 A variable declared outside a function, becomes GLOBAL.
 
 Example
+```
 let carName = "Volvo";
 // code here can use carName
 
 function myFunction() {
 // code here can also use carName
 }
+```
 A global variable has Global Scope:
 
 All scripts and functions on a web page can access it. 
@@ -908,6 +978,7 @@ If you assign a value to a variable that has not been declared, it will automati
 This code example will declare a global variable carName, even if the value is assigned inside a function.
 
 Example
+```
 myFunction();
 
 // code here can use carName
@@ -915,7 +986,7 @@ myFunction();
 function myFunction() {
   carName = "Volvo";
 }
-
+```
 ## JavaScript Hoisting
 Hoisting is JavaScript's default behavior of moving declarations to the top.
 
@@ -927,13 +998,14 @@ In other words; a variable can be used before it has been declared.
 Example 1 gives the same result as Example 2:
 
 Example 1
+```
 x = 5; // Assign 5 to x
-
 elem = document.getElementById("demo"); // Find an element
 elem.innerHTML = x;                     // Display x in the element
 
 var x; // Declare x
 
+```
 Hoisting is JavaScript's default behavior of moving all declarations to the top of the current scope (to the top of the current script or the current function).
 
 ## The let and const Keywords
@@ -946,21 +1018,23 @@ Using a let variable before it is declared will result in a ReferenceError.
 The variable is in a "temporal dead zone" from the start of the block until it is declared:
 
 Example
+```
 This will result in a ReferenceError:
 carName = "Volvo";
 let carName;
-
+```
 ## JavaScript Initializations are Not Hoisted
 JavaScript only hoists declarations, not initializations.
 
 exp 
+```
 var x = 5; // Initialize x
 
 elem = document.getElementById("demo"); // Find an element
 elem.innerHTML = x + " " + y;           // Display x and y
 
 var y = 7; // Initialize y
-
+```
 Does it make sense that y is undefined in the last example?
 
 This is because only the declaration (var y), not the initialization (=7) is hoisted to the top.
@@ -1005,22 +1079,23 @@ The this keyword in functions behaves differently in strict mode.
 The this keyword refers to the object that called the function.
 
 If the object is not specified, functions in strict mode will return undefined and functions in normal mode will return the global object (window):
-
+```
 "use strict";
 function myFunction() {
   alert(this); // will alert "undefined"
 }
 myFunction();
-
+```
 ## JavaScript Sets
 A JavaScript Set is a collection of unique values.
 
 Each value can only occur once in a Set.
 
 Example
+```
 // Create a Set
 const letters = new Set(["a","b","c"]);
-
+```
 ### Set Methods
 Method	Description
 new Set()	Creates a new Set
@@ -1039,12 +1114,13 @@ size	Returns the number elements in a Set
 A Map holds key-value pairs where the keys can be any datatype.
 
 A Map remembers the original insertion order of the keys
+```
 const fruits = new Map([
   ["apples", 500],
   ["bananas", 300],
   ["oranges", 200]
 ]);
-
+```
 ### Map Methods
 Method	Description
 new Map()	Creates a new Map object
@@ -1076,36 +1152,39 @@ Methods like call(), and apply() can refer this to any object.
 In HTML event handlers, this refers to the HTML element that received the event:
 
 Example
+```
 <button onclick="this.style.display='none'">
   Click to Remove Me!
 </button>
-
+```
 ## JavaScript Arrow Function
 Arrow functions were introduced in ES6.
 
 Arrow functions allow us to write shorter function syntax:
-
+```
 let myFunction = (a, b) => a * b;
-
+```
 ## JavaScript Classes
 ECMAScript 2015, also known as ES6, introduced JavaScript Classes.
 
 JavaScript Classes are templates for JavaScript Objects.
 
 Example
+```
 class Car {
   constructor(name, year) {
     this.name = name;
     this.year = year;
   }
 }
-
+```
 Using a Class
 When you have a class, you can use the class to create objects:
 
 Example
+```
 let myCar1 = new Car("Ford", 2014);
-
+```
 ### The Constructor Method
 The constructor method is a special method:
 
@@ -1129,6 +1208,7 @@ JSON is "self-describing" and easy to understand
 This JSON syntax defines an employees object: an array of 3 employee records (objects):
 
 JSON Example
+```
 {
 "employees":[
   {"firstName":"John", "lastName":"Doe"},
@@ -1136,7 +1216,7 @@ JSON Example
   {"firstName":"Peter", "lastName":"Jones"}
 ]
 }
-
+```
 ## JavaScript Primitives
 A primitive value is a value that has no properties or methods.
 
@@ -1161,12 +1241,13 @@ JavaScript functions have both properties and methods.
 The arguments.length property returns the number of arguments received when the function was invoked (call):
 
 Example
+```
 function myFunction(a, b) {
   return arguments.length;
 }
-
+```
 If a function is called with too many arguments (more than declared), these arguments can be reached using the arguments object.
-
+```
 function sumAll() {
   let sum = 0;
   for (let i = 0; i < arguments.length; i++) {
@@ -1174,7 +1255,7 @@ function sumAll() {
   }
   return sum;
 }
-
+```
 ## The JavaScript call() Method
 The call() method is a predefined JavaScript method.
 
@@ -1185,6 +1266,7 @@ With call(), an object can use a method belonging to another object.
 This example calls the fullName method of person, using it on person1:
 
 Example
+```
 const person = {
   fullName: function() {
     return this.firstName + " " + this.lastName;
@@ -1201,7 +1283,7 @@ const person2 = {
 
 // This will return "John Doe":
 person.fullName.call(person1);
-
+```
 ## The JavaScript apply() Method
 The apply() method is similar to the call() method (previous chapter).
 ## The Difference Between call() and apply()
@@ -1215,6 +1297,7 @@ The apply() method takes arguments as an array.
 The apply() method accepts arguments in an array:
 
 Example
+```
 const person = {
   fullName: function(city, country) {
     return this.firstName + " " + this.lastName + "," + city + "," + country;
@@ -1228,7 +1311,7 @@ const person1 = {
 
 person.fullName.apply(person1, ["Oslo", "Norway"]);
 
-
+```
 # JavaScript Closures
 JavaScript variables can belong to the local or global scope.
 
@@ -1243,6 +1326,7 @@ Local variables have short lives. They are created when the function is invoked,
 Remember self-invoking / self-call functions? What does this function do?
 
 Example
+```
 const add = (function () {
   let counter = 0;
   return function () {counter += 1; return counter}
@@ -1251,7 +1335,7 @@ const add = (function () {
 add();
 add();
 add();
-
+```
 // the counter is now 3
 Example Explained
 The variable add is assigned to the return value of a self-invoking function.
@@ -1272,6 +1356,7 @@ Static class methods are defined on the class itself.
 You cannot call a static method on an object, only on an object class.
 
 Example
+```
 class Car {
   constructor(name) {
     this.name = name;
@@ -1289,10 +1374,11 @@ document.getElementById("demo").innerHTML = Car.hello();
 // But NOT on a Car Object:
 // document.getElementById("demo").innerHTML = myCar.hello();
 // this will raise an error.
-
+```
 #### If you want to use the myCar object inside the static method, you can send it as a parameter:
 
 Example
+```
 class Car {
   constructor(name) {
     this.name = name;
@@ -1303,7 +1389,7 @@ class Car {
 }
 let myCar = new Car("Ford");
 document.getElementById("demo").innerHTML = Car.hello(myCar);
-
+```
 ## Asynchronous JavaScript
 "I will finish later!"
 
@@ -1327,18 +1413,19 @@ async makes a function return a Promise
 await makes a function wait for a Promise
 
 ## JavaScript HTML DOM EventListener
+```
 document.getElementById("myBtn").addEventListener("click", displayDate);
 syntax
 element.addEventListener("click", CalbackFunction);
-
+```
 ## Other Window Methods
 Some other methods:
-
+```
 window.open() - open a new window
 window.close() - close the current window
 window.moveTo() - move the current window
 window.resizeTo() - resize the current window
-
+```
 ## Window Screen
 The window.screen object can be written without the window prefix.
 
@@ -1358,13 +1445,13 @@ Window Location
 The window.location object can be written without the window prefix.
 
 Some examples:
-
+```
 window.location.href returns the href (URL) of the current page
 window.location.hostname returns the domain name of the web host
 window.location.pathname returns the path and filename of the current page
 window.location.protocol returns the web protocol used (http: or https:)
 window.location.assign() loads a new document
-
+```
 # AJAX Introduction
 AJAX is a developer's dream, because you can:
 
