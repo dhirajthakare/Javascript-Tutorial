@@ -51,11 +51,14 @@ $("#test").hide() - hides the element with id="test".
 ### The Document Ready Event
 You might have noticed that all jQuery methods in our examples, are inside a document ready event:
 
- $(document).ready(function(){
+ ```
+$(document).ready(function(){
 
   // jQuery methods go here...
 
 });
+
+ ```
 
 ### More Examples of jQuery Selectors
 Syntax	Description	Example
@@ -73,11 +76,15 @@ $("tr:even")	Selects all even <tr> elements
 $("tr:odd")	Selects all odd <tr> elements	
 
 Example
- $(document).ready(function(){
+ 
+ ```
+$(document).ready(function(){
   $("button").click(function(){
     $("p").hide();
   });
 });
+
+ ```
 
 ## jQuery Event Methods
 
@@ -109,9 +116,13 @@ To assign a click event to all paragraphs on a page, you can do this:
 $("p").click();
 The next step is to define what should happen when the event fires. You must pass a function to the event:
 
+```
+
 $("p").click(function(){
   // action goes here!!
 });
+
+```
 
 ### jQuery Effects - Hide and Show
 Hide, Show, Toggle, Slide, Fade, and Animate. WOW!
@@ -120,6 +131,7 @@ Hide, Show, Toggle, Slide, Fade, and Animate. WOW!
 With jQuery, you can hide and show HTML elements with the hide() and show() methods:
 
 Example
+```
 $("#hide").click(function(){
   $("p").hide();
 });
@@ -128,10 +140,16 @@ $("#show").click(function(){
   $("p").show();
 });
 
+```
+
 ### Syntax 
+
+```
 $(selector).hide(speed,callback);
 
 $(selector).show(speed,callback);
+
+```
 
 #### jQuery toggle()
 You can also toggle between hiding and showing an element with the toggle() method.
@@ -170,9 +188,13 @@ html() - Sets or returns the content of selected elements (including HTML markup
 val() - Sets or returns the value of form fields
 
 ##### Example
+
+```
 $("#btn1").click(function(){
   alert("Text: " + $("#test").text());
 });
+
+```
 
 ### jQuery - Set Content and Attributes
 ##### Set Content - text(), html(), and val()
@@ -183,11 +205,17 @@ html() - Sets or returns the content of selected elements (including HTML markup
 val() - Sets or returns the value of form fields
 
 exp 
+
+```
 $("#btn1").click(function(){
   $("#test1").text("Hello world!");
 });
 
+```
+
+
 ###### Callback function example
+```
 $("#btn1").click(function(){
   $("#test1").text(function(i, origText){
     return "Old text: " + origText + " New text: Hello world!
@@ -195,15 +223,22 @@ $("#btn1").click(function(){
   });
 });
 
+```
+
 ### Set Attributes - attr()
 The jQuery attr() method is also used to set/change attribute values.
 
 The following example demonstrates how to change (set) the value of the href attribute in a link:
 
 Example
+
+
+```
 $("button").click(function(){
   $("#w3s").attr("href", "https://www.w3schools.com/jquery/");
 });
+
+```
 
 ## jQuery - Add Elements
 With jQuery, it is easy to add new elements/content.
@@ -217,12 +252,15 @@ after() - Inserts content after the selected elements
 before() - Inserts content before the selected elements
 
 exmaple
+```
 $("p").append("<b>Some appended text.</b>");
 
 $("p").prepend("Some prepended text.");
 $("img").after("Some text after");
 
 $("img").before("Some text before");
+
+```
 
 ## jQuery - Remove Elements
 With jQuery, it is easy to remove existing HTML elements.
@@ -234,8 +272,12 @@ remove() - Removes the selected element (and its child elements)
 empty() - Removes the child elements from the selected element
 e
 exmaple 
+
+```
 $("#div1").remove();
 $("#div1").empty();
+
+```
 
 ### jQuery - Get and Set CSS Classes
 
@@ -249,6 +291,7 @@ css() - Sets or returns the style attribute
 
 exmaple 
 
+```
 $("button").click(function(){
   $("h1, h2, p").addClass("blue");
 });
@@ -256,13 +299,19 @@ $("button").click(function(){
   $("h1, h2, p").removeClass("blue");
 });
 
+```
+
 ##### jQuery toggleClass() Method
 The following example will show how to use the jQuery toggleClass() method. This method toggles between adding/removing classes from the selected elements:
 
 Example
+
+```
 $("button").click(function(){
   $("h1, h2, p").toggleClass("blue");
 });
+
+```
 
 ### jQuery - css() Method
 The css() method sets or returns one or more style properties for the selected elements.
@@ -270,13 +319,17 @@ The css() method sets or returns one or more style properties for the selected e
 ### Set a CSS Property
 To set a specified CSS property, use the following syntax:
 
+```
 css("propertyname","value");
+```
 
 
 ### Set Multiple CSS Properties
 To set multiple CSS properties, use the following syntax:
 
+```
 css({"propertyname":"value","propertyname":"value",...});
+```
 
 ### jQuery width() and height() Methods
 
@@ -314,9 +367,11 @@ parentsUntil() // mens it will add action to the it's parent element untile we s
 
 exp 
 
+```
 $(document).ready(function(){
   $("span").parent().css("color","red");
 });
+```
 
 ## jQuery Traversing - Descendants
 With jQuery you can traverse down the DOM tree to find descendants of an element.
@@ -349,17 +404,24 @@ The find() method returns descendant elements of the selected element, all the w
 The following example returns all <span> elements that are descendants of <div>:
 
 Example
+
+```
 $(document).ready(function(){
   $("div").find("span");
 });
+
+```
 
 
 The following example returns all descendants of <div>:
 
 Example
+```
 $(document).ready(function(){
   $("div").find("*");
 });
+
+```
 
 
 ### jQuery Traversing - Siblings
@@ -390,9 +452,13 @@ The first() method returns the first element of the specified elements.
 The following example selects the first <div> element:
 
 Example
+
+```
 $(document).ready(function(){
   $("div").first();
 });
+
+```
 
 ### jQuery eq() method
 The eq() method returns an element with a specific index number of the selected elements.
@@ -400,9 +466,13 @@ The eq() method returns an element with a specific index number of the selected 
 The index numbers start at 0, so the first element will have the index number 0 and not 1. The following example selects the second <p> element (index number 1):
 
 Example
+
+```
 $(document).ready(function(){
   $("p").eq(1);
 });
+
+```
 
 ### jQuery filter() Method
 The filter() method lets you specify a criteria. Elements that do not match the criteria are removed from the selection, and those that match will be returned.
@@ -410,9 +480,12 @@ The filter() method lets you specify a criteria. Elements that do not match the 
 The following example returns all <p> elements with class name "intro":
 
 Example
+```
 $(document).ready(function(){
   $("p").filter(".intro");
 });
+
+```
 
 ### jQuery not() Method
 The not() method returns all elements that do not match the criteria.
@@ -422,9 +495,13 @@ Tip: The not() method is the opposite of filter().
 The following example returns all <p> elements that do not have class name "intro":
 
 Example
+
+```
 $(document).ready(function(){
   $("p").not(".intro");
 });
+
+```
 
 
 # jQuery - AJAX Introduction
@@ -452,7 +529,8 @@ The load() method loads data from a server and puts the returned data into the s
 
 Syntax:
 
- $(selector).load(URL,data,callback);
+ ``` $(selector).load(URL,data,callback); ```
+ 
 The required URL parameter specifies the URL you wish to load.
 
 The optional data parameter specifies a set of querystring key/value pairs to send along with the request.
@@ -466,14 +544,17 @@ The optional callback parameter is the name of a function to be executed after t
 The following example loads the content of the file "demo_test.txt" into a specific <div> element:
 
 Example
+```
 $("#div1").load("demo_test.txt");
+
+```
 
 It is also possible to add a jQuery selector to the URL parameter.
 
 The following example loads the content of the element with id="p1", inside the file "demo_test.txt", into a specific <div> element:
 
 Example
-$("#div1").load("demo_test.txt #p1");
+``` $("#div1").load("demo_test.txt #p1"); ```
 
 The optional callback parameter specifies a callback function to run when the load() method is completed. The callback function can have different parameters:
 
@@ -482,6 +563,7 @@ statusTxt - contains the status of the call
 xhr - contains the XMLHttpRequest object
 
 Example
+```
 $("button").click(function(){
   $("#div1").load("demo_test.txt", function(responseTxt, statusTxt, xhr){
     if(statusTxt == "success")
@@ -490,6 +572,8 @@ $("button").click(function(){
       alert("Error: " + xhr.status + ": " + xhr.statusText);
   });
 });
+
+```
 
 
 ## jQuery - AJAX get() and post() Methods
@@ -562,18 +646,24 @@ The optional callback parameter is the name of a function to be executed if the 
 The following example uses the $.get() method to retrieve data from a file on the server:
 
 Example
+
+```
 $("button").click(function(){
   $.get("demo_test.asp", function(data, status){
     alert("Data: " + data + "\nStatus: " + status);
   });
 });
 
+```
+
 ### jQuery $.post() Method
 The $.post() method requests data from the server using an HTTP POST request.
 
 Syntax:
 
+``` 
 $.post(URL,data,callback);
+```
 The required URL parameter specifies the URL you wish to request.
 
 The optional data parameter specifies some data to send along with the request.
@@ -583,6 +673,8 @@ The optional callback parameter is the name of a function to be executed if the 
 The following example uses the $.post() method to send some data along with the request:
 
 Example
+
+```
 $("button").click(function(){
   $.post("demo_test_post.asp",
   {
@@ -593,6 +685,8 @@ $("button").click(function(){
     alert("Data: " + data + "\nStatus: " + status);
   });
 });
+
+```
 
 ### jQuery - The noConflict() Method
 What if you wish to use other frameworks on your pages, while still using jQuery?
@@ -614,6 +708,8 @@ The noConflict() method releases the hold on the $ shortcut identifier, so that 
 You can of course still use jQuery, simply by writing the full name instead of the shortcut:
 
 Example
+
+```
  $.noConflict();
 jQuery(document).ready(function(){
   jQuery("button").click(function(){
@@ -621,9 +717,12 @@ jQuery(document).ready(function(){
   });
 });
 
+```
+
 ##### You can also create your own shortcut very easily. The noConflict() method returns a reference to jQuery, that you can save in a variable, for later use. Here is an example:
 
 Example
+```
 var jq = $.noConflict();
 jq(document).ready(function(){
   jq("button").click(function(){
@@ -631,15 +730,21 @@ jq(document).ready(function(){
   });
 });
 
+```
+
 If you have a block of jQuery code which uses the $ shortcut and you do not want to change it all, you can pass the $ sign in as a parameter to the ready method. This allows you to access jQuery using $, inside this function - outside of it, you will have to use "jQuery":
 
 Example
+
+```
 $.noConflict();
 jQuery(document).ready(function($){
   $("button").click(function(){
     $("p").text("jQuery is still working!");
   });
 });
+
+```
 
 
 ### jQuery - Filters
