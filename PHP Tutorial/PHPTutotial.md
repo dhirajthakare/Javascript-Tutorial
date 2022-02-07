@@ -1513,7 +1513,9 @@ echo "Peter is " . $age['Peter'] . " years old.";
 To loop through and print all the values of an associative array, you could use a foreach loop, like this:
 
 Example
+```
 <?php
+
 $age = array("Peter"=>"35", "Ben"=>"37", "Joe"=>"43");
 
 foreach($age as $x => $x_value) {
@@ -1521,7 +1523,7 @@ foreach($age as $x => $x_value) {
   echo "<br>";
 }
 ?>
-
+```
 ### PHP Multidimensional Arrays
 #### PHP - Multidimensional Arrays
 A multidimensional array is an array containing one or more arrays.
