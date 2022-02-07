@@ -1295,6 +1295,8 @@ In PHP 7, type declarations were added. This gives us an option to specify the e
 In the following example we try to send both a number and a string to the function without using strict:
 
 Example
+```
+
 <?php
 function addNumbers(int $a, int $b) {
   return $a + $b;
@@ -1302,6 +1304,8 @@ function addNumbers(int $a, int $b) {
 echo addNumbers(5, "5 days");
 // since strict is NOT enabled "5 days" is changed to int(5), and it will return 10
 ?>
+
+```
 
 Example
 ```
@@ -1319,9 +1323,8 @@ To specify strict we need to set declare(strict_types=1);. This must be on the v
 In the following example we try to send both a number and a string to the function, but here we have added the strict declaration:
 
 Example
-
-<?php declare(strict_types=1); // strict requirement
 ```
+<?php declare(strict_types=1); // strict requirement
 function addNumbers(int $a, int $b) {
   return $a + $b;
 }
