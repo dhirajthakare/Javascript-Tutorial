@@ -1797,6 +1797,1302 @@ Super global variables are built-in variables that are always available in all s
 #### PHP $_GET
 PHP $_GET is a PHP super global variable which is used to collect form data after submitting an HTML form with method="get".
 
-$_GET can also collect data sent in the URL.
+ $_GET can also collect data sent in the URL.
+
+## PHP Regular Expressions
+
+### What is a Regular Expression?
+A regular expression is a sequence of characters that forms a search pattern. When you search for data in a text, you can use this search pattern to describe what you are searching for.
+
+A regular expression can be a single character, or a more complicated pattern.
+
+Regular expressions can be used to perform all types of text search and text replace operations.
+
+##### Syntax
+In PHP, regular expressions are strings composed of delimiters, a pattern and optional modifiers.
+```
+$exp = "/w3schools/i";
+```
+
+In the example above, / is the delimiter, w3schools is the pattern that is being searched for, and i is a modifier that makes the search case-insensitive.
+The delimiter can be any character that is not a letter, number, backslash or space. The most common delimiter is the forward slash (/), but when your pattern contains forward slashes it is convenient to choose other delimiters such as # or ~.
+
+### Regular Expression Functions
+PHP provides a variety of functions that allow you to use regular expressions. The preg_match(), preg_match_all() and preg_replace() functions are some of the most commonly used ones:
+
+Function	Description
+preg_match()	Returns 1 if the pattern was found in the string and 0 if not
+preg_match_all()	Returns the number of times the pattern was found in the string, which may also be 0
+preg_replace()	Returns a new string where matched patterns have been replaced with another string
+
+### Using preg_match()
+The preg_match() function will tell you whether a string contains matches of a pattern.
+
+Example
+Use a regular expression to do a case-insensitive search for "w3schools" in a string:
+```
+<?php
+$str = "Visit W3Schools";
+$pattern = "/w3schools/i";
+echo preg_match($pattern, $str); // Outputs 1
+?>
+```
+### Using preg_match_all()
+The preg_match_all() function will tell you how many matches were found for a pattern in a string.
+
+Example
+Use a regular expression to do a case-insensitive count of the number of occurrences of "ain" in a string:
+```
+<?php
+$str = "The rain in SPAIN falls mainly on the plains.";
+$pattern = "/ain/i";
+echo preg_match_all($pattern, $str); // Outputs 4
+?>
+```
+### Using preg_replace()
+The preg_replace() function will replace all of the matches of the pattern in a string with another string.
+
+Example
+Use a case-insensitive regular expression to replace Microsoft with W3Schools in a string:
+```
+<?php
+$str = "Visit Microsoft!";
+$pattern = "/microsoft/i";
+echo preg_replace($pattern, "W3Schools", $str); // Outputs "Visit W3Schools!"
+?>
+
+```
+
+#### PHP - Validate E-mail
+The easiest and safest way to check whether an email address is well-formed is to use PHP's filter_var() function.
+
+In the code below, if the e-mail address is not well-formed, then store an error message:
+
+$email = test_input($_POST["email"]);
+if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+  $emailErr = "Invalid email format";
+}
+
+#### PHP - Validate URL
+The code below shows a way to check if a URL address syntax is valid (this regular expression also allows dashes in the URL). If the URL address syntax is not valid, then store an error message:
+
+$website = test_input($_POST["website"]);
+if (!preg_match("/\b(?:(?:https?|ftp):\/\/|www\.)[-a-z0-9+&@#\/%?=~_|!:,.;]*[-a-z0-9+&@#\/%=~_|]/i",$website)) {
+  $websiteErr = "Invalid URL";
+}
+
+## php advanced
+
+### The PHP Date() Function
+The PHP date() function formats a timestamp to a more readable date and time.
+Syntax
+```
+date(format,timestamp)
+```
+
+Parameter	Description
+format	Required. Specifies the format of the timestamp
+timestamp	Optional. Specifies a timestamp. Default is the current date and time
+
+A timestamp is a sequence of characters, denoting the date and/or time at which a certain event occurred.
+
+### Get a Date
+The required format parameter of the date() function specifies how to format the date (or time).
+
+Here are some characters that are commonly used for dates:
+
+d - Represents the day of the month (01 to 31)
+m - Represents a month (01 to 12)
+Y - Represents a year (in four digits)
+l (lowercase 'L') - Represents the day of the week
+Other characters, like"/", ".", or "-" can also be inserted between the characters to add additional formatting.
+
+The example below formats today's date in three different ways:
+
+Example
+```
+<?php
+echo "Today is " . date("Y/m/d") . "<br>";
+echo "Today is " . date("Y.m.d") . "<br>";
+echo "Today is " . date("Y-m-d") . "<br>";
+echo "Today is " . date("l");
+?>
+```
+
+### PHP Tip - Automatic Copyright Year
+Use the date() function to automatically update the copyright year on your website:
+
+Example
+```
+&copy; 2010-<?php echo date("Y");?>
+```
+
+### Get a Time
+Here are some characters that are commonly used for times:
+
+H - 24-hour format of an hour (00 to 23)
+h - 12-hour format of an hour with leading zeros (01 to 12)
+i - Minutes with leading zeros (00 to 59)
+s - Seconds with leading zeros (00 to 59)
+a - Lowercase Ante meridiem and Post meridiem (am or pm)
+The example below outputs the current time in the specified format:
+
+Example
+```
+<?php
+echo "The time is " . date("h:i:sa");
+?>
+```
+
+## PHP Include Files
+The include (or require) statement takes all the text/code/markup that exists in the specified file and copies it into the file that uses the include statement.
+
+Including files is very useful when you want to include the same PHP, HTML, or text on multiple pages of a website
+
+#### PHP include and require Statements
+It is possible to insert the content of one PHP file into another PHP file (before the server executes it), with the include or require statement.
+
+##### The include and require statements are identical, except upon failure:
+
+require will produce a fatal error (E_COMPILE_ERROR) and stop the script
+include will only produce a warning (E_WARNING) and the script will continue
+So, if you want the execution to go on and show users the output, even if the include file is missing, use the include statement. Otherwise, in case of FrameWork, CMS, or a complex PHP application coding, always use the require statement to include a key file to the flow of execution. This will help avoid compromising your application's security and integrity, just in-case one key file is accidentally missing.
+
+Including files saves a lot of work. This means that you can create a standard header, footer, or menu file for all your web pages. Then, when the header needs to be updated, you can only update the header include file.
+
+Syntax
+```
+include 'filename';
+
+or
+
+require 'filename';
+```
+
+#### PHP include Examples
+Example 1
+Assume we have a standard footer file called "footer.php", that looks like this:
+
+<?php
+echo "<p>Copyright &copy; 1999-" . date("Y") . " W3Schools.com</p>";
+?>
+To include the footer file in a page, use the include statement:
+
+Example
+```
+<html>
+<body>
+
+<h1>Welcome to my home page!</h1>
+<p>Some text.</p>
+<p>Some more text.</p>
+<?php include 'footer.php';?>
+
+</body>
+</html>
+```
+
+Use require when the file is required by the application.
+
+Use include when the file is not required and application should continue when file is not found.
+
+## PHP File Handling
+File handling is an important part of any web application. You often need to open and process a file for different tasks.
+
+### PHP Manipulating Files
+PHP has several functions for creating, reading, uploading, and editing files.
+
+###### Be careful when manipulating files!
+
+When you are manipulating files you must be very careful.
+You can do a lot of damage if you do something wrong. Common errors are: editing the wrong file, filling a hard-drive with garbage data, and deleting the content of a file by accident.
+
+### PHP readfile() Function
+The readfile() function reads a file and writes it to the output buffer.
+
+Assume we have a text file called "webdictionary.txt", stored on the server, that looks like this:
+```
+AJAX = Asynchronous JavaScript and XML
+CSS = Cascading Style Sheets
+HTML = Hyper Text Markup Language
+PHP = PHP Hypertext Preprocessor
+SQL = Structured Query Language
+SVG = Scalable Vector Graphics
+XML = EXtensible Markup Language
+The PHP code to read the file and write it to the output buffer is as follows (the readfile() function returns the number of bytes read on success):
+```
+
+Example
+```
+<?php
+echo readfile("webdictionary.txt");
+?>
+```
+### PHP File Handling
+File handling is an important part of any web application. You often need to open and process a file for different tasks.
+
+#### PHP Manipulating Files
+PHP has several functions for creating, reading, uploading, and editing files.
+
+Be careful when manipulating files!
+
+When you are manipulating files you must be very careful.
+You can do a lot of damage if you do something wrong. Common errors are: editing the wrong file, filling a hard-drive with garbage data, and deleting the content of a file by accident.
+
+PHP readfile() Function
+The readfile() function reads a file and writes it to the output buffer.
+
+Assume we have a text file called "webdictionary.txt", stored on the server, that looks like this:
+```
+AJAX = Asynchronous JavaScript and XML
+CSS = Cascading Style Sheets
+HTML = Hyper Text Markup Language
+PHP = PHP Hypertext Preprocessor
+SQL = Structured Query Language
+SVG = Scalable Vector Graphics
+XML = EXtensible Markup Language
+```
+The PHP code to read the file and write it to the output buffer is as follows (the readfile() function returns the number of bytes read on success):
+
+Example
+```
+<?php
+echo readfile("webdictionary.txt");
+?>
+```
+The readfile() function is useful if all you want to do is open up a file and read its contents.
+
+### PHP File Open/Read/Close 
+
+A better method to open files is with the fopen() function. This function gives you more options than the readfile() function.
+
+We will use the text file, "webdictionary.txt", during the lessons:
+```
+AJAX = Asynchronous JavaScript and XML
+CSS = Cascading Style Sheets
+HTML = Hyper Text Markup Language
+PHP = PHP Hypertext Preprocessor
+SQL = Structured Query Language
+SVG = Scalable Vector Graphics
+XML = EXtensible Markup Language
+```
+
+The first parameter of fopen() contains the name of the file to be opened and the second parameter specifies in which mode the file should be opened. The following example also generates a message if the fopen() function is unable to open the specified file:
+
+Example
+```
+<?php
+$myfile = fopen("webdictionary.txt", "r") or die("Unable to open file!");
+echo fread($myfile,filesize("webdictionary.txt"));
+fclose($myfile);
+?>
+```
+
+#### PHP Write to File - fwrite()
+The fwrite() function is used to write to a file.
+
+The first parameter of fwrite() contains the name of the file to write to and the second parameter is the string to be written.
+
+The example below writes a couple of names into a new file called "newfile.txt":
+
+Example
+```
+<?php
+$myfile = fopen("newfile.txt", "w") or die("Unable to open file!");
+$txt = "John Doe\n";
+fwrite($myfile, $txt);
+$txt = "Jane Doe\n";
+fwrite($myfile, $txt);
+fclose($myfile);
+?>
+```
+## PHP File Upload
+With PHP, it is easy to upload files to the server.
 
 
+## PHP Cookies
+
+### What is a Cookie?
+A cookie is often used to identify a user. A cookie is a small file that the server embeds on the user's computer. Each time the same computer requests a page with a browser, it will send the cookie too. With PHP, you can both create and retrieve cookie values.
+
+### Create Cookies With PHP
+A cookie is created with the setcookie() function.
+
+Syntax
+```
+setcookie(name, value, expire, path, domain, secure, httponly);
+```
+Only the name parameter is required. All other parameters are optional.
+
+### PHP Create/Retrieve a Cookie
+The following example creates a cookie named "user" with the value "John Doe". The cookie will expire after 30 days (86400 * 30). The "/" means that the cookie is available in entire website (otherwise, select the directory you prefer).
+
+We then retrieve the value of the cookie "user" (using the global variable $_COOKIE). We also use the isset() function to find out if the cookie is set:
+```
+Example
+<?php
+$cookie_name = "user";
+$cookie_value = "John Doe";
+setcookie($cookie_name, $cookie_value, time() + (86400 * 30), "/"); // 86400 = 1 day
+?>
+<html>
+<body>
+
+<?php
+if(!isset($_COOKIE[$cookie_name])) {
+  echo "Cookie named '" . $cookie_name . "' is not set!";
+} else {
+  echo "Cookie '" . $cookie_name . "' is set!<br>";
+  echo "Value is: " . $_COOKIE[$cookie_name];
+}
+?>
+
+
+</body>
+</html>
+
+```
+
+### Delete a Cookie
+To delete a cookie, use the setcookie() function with an expiration date in the past:
+```
+Example
+<?php
+// set the expiration date to one hour ago
+setcookie("user", "", time() - 3600);
+?>
+<html>
+<body>
+
+<?php
+echo "Cookie 'user' is deleted.";
+?>
+
+</body>
+</html>
+
+```
+
+## PHP Sessions
+A session is a way to store information (in variables) to be used across multiple pages.
+
+Unlike a cookie, the information is not stored on the users computer.
+
+### What is a PHP Session?
+When you work with an application, you open it, do some changes, and then you close it. This is much like a Session. The computer knows who you are. It knows when you start the application and when you end. But on the internet there is one problem: the web server does not know who you are or what you do, because the HTTP address doesn't maintain state.
+
+Session variables solve this problem by storing user information to be used across multiple pages (e.g. username, favorite color, etc). By default, session variables last until the user closes the browser.
+
+So; Session variables hold information about one single user, and are available to all pages in one application.
+
+Tip: If you need a permanent storage, you may want to store the data in a database.
+#### Start a PHP Session
+A session is started with the session_start() function.
+
+Session variables are set with the PHP global variable: $_SESSION.
+
+Now, let's create a new page called "demo_session1.php". In this page, we start a new PHP session and set some session variables:
+
+Example
+```
+<?php
+// Start the session
+session_start();
+?>
+<!DOCTYPE html>
+<html>
+<body>
+
+<?php
+// Set session variables
+$_SESSION["favcolor"] = "green";
+$_SESSION["favanimal"] = "cat";
+echo "Session variables are set.";
+?>
+
+</body>
+</html>
+```
+
+Note: The session_start() function must be the very first thing in your document. Before any HTML tags.
+
+#### Get PHP Session Variable Values
+Next, we create another page called "demo_session2.php". From this page, we will access the session information we set on the first page ("demo_session1.php").
+
+Notice that session variables are not passed individually to each new page, instead they are retrieved from the session we open at the beginning of each page (session_start()).
+
+Also notice that all session variable values are stored in the global $_SESSION variable:
+
+Example
+```
+<?php
+session_start();
+?>
+<!DOCTYPE html>
+<html>
+<body>
+
+<?php
+// Echo session variables that were set on previous page
+echo "Favorite color is " . $_SESSION["favcolor"] . ".<br>";
+echo "Favorite animal is " . $_SESSION["favanimal"] . ".";
+?>
+
+</body>
+</html>
+```
+
+##### Another way to show all the session variable values for a user session is to run the following code:
+
+Example
+```
+<?php
+session_start();
+?>
+<!DOCTYPE html>
+<html>
+<body>
+
+<?php
+print_r($_SESSION);
+?>
+
+</body>
+</html>
+
+```
+
+### Modify a PHP Session Variable
+To change a session variable, just overwrite it:
+
+Example
+```
+<?php
+session_start();
+?>
+<!DOCTYPE html>
+<html>
+<body>
+
+<?php
+// to change a session variable, just overwrite it
+$_SESSION["favcolor"] = "yellow";
+print_r($_SESSION);
+?>
+
+</body>
+</html>
+
+```
+
+### Destroy a PHP Session
+To remove all global session variables and destroy the session, use session_unset() and session_destroy():
+
+Example
+```
+<?php
+session_start();
+?>
+<!DOCTYPE html>
+<html>
+<body>
+
+<?php
+// remove all session variables
+session_unset();
+
+// destroy the session
+session_destroy();
+?>
+
+</body>
+</html>
+```
+
+session_unset just clears the $_SESSION variable. It’s equivalent to doing:
+
+```$_SESSION = array();```
+So this does only affect the local $_SESSION variable instance but not the session data in the session storage.
+
+In contrast to that, session_destroy destroys the session data that is stored in the session storage (e.g. the session file in the file system).
+
+Everything else remains unchanged.
+
+## PHP Filters
+
+### Why Use Filters?
+Many web applications receive external input. External input/data can be:
+
+User input from a form
+Cookies
+Web services data
+Server variables
+Database query results
+
+##### You should always validate external data!
+Invalid submitted data can lead to security problems and break your webpage!
+By using PHP filters you can be sure your application gets the correct input!
+
+#### PHP filter_var() Function
+The filter_var() function both validate and sanitize data.
+
+The filter_var() function filters a single variable with a specified filter. It takes two pieces of data:
+
+The variable you want to check
+The type of check to use
+
+##### Sanitize a String
+The following example uses the filter_var() function to remove all HTML tags from a string:
+
+Example
+```
+<?php
+$str = "<h1>Hello World!</h1>";
+$newstr = filter_var($str, FILTER_SANITIZE_STRING); // output => Hello World!
+echo $newstr;
+?>
+```
+
+##### Validate an Integer
+The following example uses the filter_var() function to check if the variable $int is an integer. If $int is an integer, the output of the code below will be: "Integer is valid". If $int is not an integer, the output will be: "Integer is not valid":
+
+Example
+```
+<?php
+$int = 100;
+
+if (!filter_var($int, FILTER_VALIDATE_INT) === false) {
+  echo("Integer is valid");
+} else {
+  echo("Integer is not valid");
+}
+?>
+```
+
+##### Validate an IP Address
+The following example uses the filter_var() function to check if the variable $ip is a valid IP address:
+
+Example
+```
+<?php
+$ip = "127.0.0.1";
+
+if (!filter_var($ip, FILTER_VALIDATE_IP) === false) {
+  echo("$ip is a valid IP address");
+} else {
+  echo("$ip is not a valid IP address");
+}
+?>
+```
+
+##### Sanitize and Validate an Email Address
+The following example uses the filter_var() function to first remove all illegal characters from the $email variable, then check if it is a valid email address:
+
+Example
+<?php
+```
+$email = "john.doe@example.com";
+
+// Remove all illegal characters from email
+$email = filter_var($email, FILTER_SANITIZE_EMAIL);
+
+// Validate e-mail
+if (!filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
+  echo("$email is a valid email address");
+} else {
+  echo("$email is not a valid email address");
+}
+?>
+```
+
+##### Validate an Integer Within a Range
+The following example uses the filter_var() function to check if a variable is both of type INT, and between 1 and 200:
+
+Example
+```
+<?php
+$int = 122;
+$min = 1;
+$max = 200;
+
+if (filter_var($int, FILTER_VALIDATE_INT, array("options" => array("min_range"=>$min, "max_range"=>$max))) === false) {
+  echo("Variable value is not within the legal range");
+} else {
+  echo("Variable value is within the legal range");
+}
+?>
+```
+
+##### Validate IPv6 Address
+The following example uses the filter_var() function to check if the variable $ip is a valid IPv6 address:
+
+Example
+```
+<?php
+$ip = "2001:0db8:85a3:08d3:1319:8a2e:0370:7334";
+
+if (!filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) === false) {
+  echo("$ip is a valid IPv6 address");
+} else {
+  echo("$ip is not a valid IPv6 address");
+}
+?>
+```
+
+##### Validate URL - Must Contain QueryString
+The following example uses the filter_var() function to check if the variable $url is a URL with a querystring:
+
+Example
+```
+<?php
+$url = "https://www.w3schools.com";
+
+if (!filter_var($url, FILTER_VALIDATE_URL, FILTER_FLAG_QUERY_REQUIRED) === false) {
+  echo("$url is a valid URL with a query string");
+} else {
+  echo("$url is not a valid URL with a query string");
+}
+?>
+```
+
+##### Remove Characters With ASCII Value > 127
+The following example uses the filter_var() function to sanitize a string. It will both remove all HTML tags, and all characters with ASCII value > 127, from the string:
+
+Example
+```
+<?php
+$str = "<h1>Hello WorldÆØÅ!</h1>";
+// Remove HTML tags and all characters with ASCII value > 127
+$newstr = filter_var($str, FILTER_SANITIZE_STRING, FILTER_FLAG_STRIP_HIGH);
+echo $newstr;
+?>
+```
+
+## PHP Callback Functions
+### Callback Functions
+A callback function (often referred to as just "callback") is a function which is passed as an argument into another function.
+
+Any existing function can be used as a callback function. To use a function as a callback function, pass a string containing the name of the function as the argument of another function:
+
+Example
+Pass a callback to PHP's array_map() function to calculate the length of every string in an array:
+```
+<?php
+function my_callback($item) {
+  return strlen($item);
+}
+
+$strings = ["apple", "orange", "banana", "coconut"];
+$lengths = array_map("my_callback", $strings);
+print_r($lengths);
+?>
+```
+
+##### Callbacks in User Defined Functions
+User-defined functions and methods can also take callback functions as arguments. To use callback functions inside a user-defined function or method, call it by adding parentheses to the variable and pass arguments as with normal functions:
+
+Example
+Run a callback from a user-defined function:
+```
+<?php
+function exclaim($str) {
+  return $str . "! ";
+}
+
+function ask($str) {
+  return $str . "? ";
+}
+
+function printFormatted($str, $format) {
+  // Calling the $format callback function
+  echo $format($str);
+}
+
+// Pass "exclaim" and "ask" as callback functions to printFormatted()
+printFormatted("Hello world", "exclaim");
+printFormatted("Hello world", "ask");
+?>
+```
+
+### PHP and JSON
+#### What is JSON?
+JSON stands for JavaScript Object Notation, and is a syntax for storing and exchanging data.
+
+Since the JSON format is a text-based format, it can easily be sent to and from a server, and used as a data format by any programming language.
+
+#### PHP and JSON
+PHP has some built-in functions to handle JSON.
+
+First, we will look at the following two functions:
+
+json_encode()
+json_decode()
+
+#### PHP - json_encode()
+The json_encode() function is used to encode a value to JSON format.
+
+Example
+This example shows how to encode an associative array into a JSON object:
+```
+<?php
+$age = array("Peter"=>35, "Ben"=>37, "Joe"=>43);
+
+echo json_encode($age);
+?>
+```
+
+#### PHP - json_decode()
+The json_decode() function is used to decode a JSON object into a PHP object or an associative array.
+
+Example
+This example decodes JSON data into a PHP object:
+```
+<?php
+$jsonobj = '{"Peter":35,"Ben":37,"Joe":43}';
+
+var_dump(json_decode($jsonobj));
+?>
+```
+
+#### PHP - Accessing the Decoded Values
+Here are two examples of how to access the decoded values from an object and from an associative array:
+
+Example
+This example shows how to access the values from a PHP object:
+```
+<?php
+$jsonobj = '{"Peter":35,"Ben":37,"Joe":43}';
+
+$obj = json_decode($jsonobj);
+
+echo $obj->Peter;
+echo $obj->Ben;
+echo $obj->Joe;
+?>
+```
+
+###### Example
+This example shows how to access the values from a PHP associative array:
+
+<?php
+$jsonobj = '{"Peter":35,"Ben":37,"Joe":43}';
+
+$arr = json_decode($jsonobj, true);
+
+echo $arr["Peter"];
+echo $arr["Ben"];
+echo $arr["Joe"];
+?>
+
+## PHP Exceptions
+#### What is an Exception?
+An exception is an object that describes an error or unexpected behaviour of a PHP script.
+
+Exceptions are thrown by many PHP functions and classes.
+
+User defined functions and classes can also throw exceptions.
+
+Exceptions are a good way to stop a function when it comes across data that it cannot use.
+
+Example
+Show a message when an exception is thrown:
+```
+<?php
+function divide($dividend, $divisor) {
+  if($divisor == 0) {
+    throw new Exception("Division by zero");
+  }
+  return $dividend / $divisor;
+}
+
+try {
+  echo divide(5, 0);
+} catch(Exception $e) {
+  echo "Unable to divide.";
+}
+?>
+```
+
+The catch block indicates what type of exception should be caught and the name of the variable which can be used to access the exception. In the example above, the type of exception is Exception and the variable name is $e.
+
+##### The try...catch...finally Statement
+The try...catch...finally statement can be used to catch exceptions. Code in the finally block will always run regardless of whether an exception was caught. If finally is present, the catch block is optional.
+
+Syntax
+try {
+  code that can throw exceptions
+} catch(Exception $e) {
+  code that runs when an exception is caught
+} finally {
+  code that always runs regardless of whether an exception was caught
+}
+
+## PHP - What is OOP?
+#### PHP What is OOP?
+OOP stands for Object-Oriented Programming.
+
+Procedural programming is about writing procedures or functions that perform operations on the data, while object-oriented programming is about creating objects that contain both data and functions.
+
+Object-oriented programming has several advantages over procedural programming:
+
+OOP is faster and easier to execute
+OOP provides a clear structure for the programs
+OOP helps to keep the PHP code DRY "Don't Repeat Yourself", and makes the code easier to maintain, modify and debug
+OOP makes it possible to create full reusable applications with less code and shorter development time
+Tip: The "Don't Repeat Yourself" (DRY) principle is about reducing the repetition of code. You should extract out the codes that are common for the application, and place them at a single place and reuse them instead of repeating it.
+
+###### Tip:
+           The "Don't Repeat Yourself" (DRY) principle is about reducing the repetition of code. You should extract out the codes that are common for the application, and place them at a single place and reuse them instead of repeating it.
+
+### PHP - What are Classes and Objects?
+Classes and objects are the two main aspects of object-oriented programming.
+
+So, a class is a template for objects, and an object is an example(instance) of a class.
+
+When the individual objects are created, they inherit all the properties and behaviors from the class, but each object will have different values for the properties.
+
+### PHP OOP - Classes and Objects
+A class is a template for objects, and an object is an instance of class.
+
+#### OOP Case
+Let's assume we have a class named Fruit. A Fruit can have properties like name, color, weight, etc. We can define variables like $name, $color, and $weight to hold the values of these properties.
+
+When the individual objects (apple, banana, etc.) are created, they inherit all the properties and behaviors from the class, but each object will have different values for the properties.
+
+#### Define a Class
+A class is defined by using the class keyword, followed by the name of the class and a pair of curly braces ({}). All its properties and methods go inside the braces:
+
+Syntax
+```
+<?php
+class Fruit {
+  // code goes here...
+}
+?>
+```
+
+Below we declare a class named Fruit consisting of two properties ($name and $color) and two methods set_name() and get_name() for setting and getting the $name property:
+
+```
+<?php
+class Fruit {
+  // Properties
+  public $name;
+  public $color;
+  public $newData;
+
+  // Methods
+  function set_name($name) {
+    $this->name = $name;
+  }
+  function get_name() {
+    return $this->name;
+  }
+}
+?>
+```
+
+Note: In a class, variables are called properties and functions are called methods!
+
+
+
+##### Define Objects
+Classes are nothing without objects! We can create multiple objects from a class. Each object has all the properties and methods defined in the class, but they will have different property values.
+
+Objects of a class is created using the new keyword.
+
+In the example below, $apple and $banana are instances of the class Fruit:
+
+Example
+```
+<?php
+class Fruit {
+  // Properties
+  public $name;
+  public $color;
+
+  // Methods
+  function set_name($name) {
+    $this->name = $name;
+  }
+  function get_name() {
+    return $this->name;
+  }
+}
+
+$apple = new Fruit();
+$apple->set_name('Apple');
+$apple->$newData = "myName1";
+
+$banana = new Fruit();
+$banana->set_name('Banana');
+$banana->$newData = "myName2";
+
+echo $apple->get_name();
+echo "<br>";
+echo $banana->get_name();
+?>
+```
+### PHP - The $this Keyword
+The $this keyword refers to the current object, and is only available inside methods.
+
+Look at the following example:
+
+Example
+```
+<?php
+class Fruit {
+  public $name;
+}
+$apple = new Fruit();
+?>
+```
+So, where can we change the value of the $name property? There are two ways:
+
+1. Inside the class (by adding a set_name() method and use $this):
+
+Example
+```
+<?php
+class Fruit {
+  public $name;
+  function set_name($name) {
+    $this->name = $name;
+  }
+}
+$apple = new Fruit();
+$apple->set_name("Apple");
+
+echo $apple->name;
+?>
+
+```
+2. Outside the class (by directly changing the property value):
+
+Example
+```
+<?php
+class Fruit {
+  public $name;
+}
+$apple = new Fruit();
+$apple->name = "Apple";
+
+echo $apple->name;
+?>
+```
+
+####  PHP - instanceof
+You can use the instanceof keyword to check if an object belongs to a specific class:
+
+Example
+```
+<?php
+$apple = new Fruit();
+var_dump($apple instanceof Fruit);
+?>
+```
+
+#### PHP OOP - Constructor
+
+##### PHP - The __construct Function
+A constructor allows you to initialize an object's properties upon creation of the object.
+
+If you create a __construct() function, PHP will automatically call this function when you create an object from a class.
+
+Notice that the construct function starts with two underscores (__)!
+
+We see in the example below, that using a constructor saves us from calling the set_name() method which reduces the amount of code:
+
+Example
+```
+<?php
+class Fruit {
+  public $name;
+  public $color;
+
+  function __construct($name) {
+    $this->name = $name;
+  }
+  function get_name() {
+    return $this->name;
+  }
+}
+
+$apple = new Fruit("Apple");
+echo $apple->get_name();
+?>
+```
+
+### PHP OOP - Destructor
+
+#### PHP - The __destruct Function
+A destructor is called when the object is destructed or the script is stopped or exited.
+
+If you create a __destruct() function, PHP will automatically call this function at the end of the script.
+
+Notice that the destruct function starts with two underscores (__)!
+
+The example below has a __construct() function that is automatically called when you create an object from a class, and a __destruct() function that is automatically called at the end of the script:
+
+Example
+```
+<?php
+class Fruit {
+  public $name;
+  public $color;
+
+  function __construct($name) {
+    $this->name = $name;
+  }
+  function __destruct() {
+    echo "The fruit is {$this->name}.";
+  }
+}
+
+$apple = new Fruit("Apple");
+?>
+```
+
+Tip: As constructors and destructors helps reducing the amount of code, they are very useful!
+
+#### PHP OOP - Access Modifiers
+PHP - Access Modifiers
+Properties and methods can have access modifiers which control where they can be accessed.
+
+There are three access modifiers:
+
+public - the property or method can be accessed from everywhere. This is default
+protected - the property or method can be accessed within the class and by classes derived from that class
+private - the property or method can ONLY be accessed within the class.
+
+In the following example we have added three different access modifiers to three properties (name, color, and weight). Here, if you try to set the name property it will work fine (because the name property is public, and can be accessed from everywhere). However, if you try to set the color or weight property it will result in a fatal error (because the color and weight property are protected and private):
+
+Example
+```
+<?php
+class Fruit {
+  public $name;
+  protected $color;
+  private $weight;
+}
+
+$mango = new Fruit();
+$mango->name = 'Mango'; // OK
+$mango->color = 'Yellow'; // ERROR
+$mango->weight = '300'; // ERROR
+?>
+
+```
+
+In the next example we have added access modifiers to two functions. Here, if you try to call the set_color() or the set_weight() function it will result in a fatal error (because the two functions are considered protected and private), even if all the properties are public:
+
+Example
+```
+<?php
+class Fruit {
+  public $name;
+  public $color;
+  public $weight;
+
+  function set_name($n) {  // a public function (default)
+    $this->name = $n;
+  }
+  protected function set_color($n) { // a protected function
+    $this->color = $n;
+  }
+  private function set_weight($n) { // a private function
+    $this->weight = $n;
+  }
+}
+
+$mango = new Fruit();
+$mango->set_name('Mango'); // OK
+$mango->set_color('Yellow'); // ERROR
+$mango->set_weight('300'); // ERROR
+?>
+```
+
+### PHP OOP - Inheritance
+#### PHP - What is Inheritance?
+Inheritance in OOP = When a class derives from another class.
+
+The child class will inherit all the public and protected properties and methods from the parent class. In addition, it can have its own properties and methods.
+
+An inherited class is defined by using the extends keyword.
+
+Let's look at an example:
+
+Example
+```
+<?php
+class Fruit {
+  public $name;
+  public $color;
+  public function __construct($name, $color) {
+    $this->name = $name;
+    $this->color = $color;
+  }
+  public function intro() {
+    echo "The fruit is {$this->name} and the color is {$this->color}.";
+  }
+}
+
+// Strawberry is inherited from Fruit
+class Strawberry extends Fruit {
+  public function message() {
+    echo "Am I a fruit or a berry? ";
+  }
+}
+$strawberry = new Strawberry("Strawberry", "red");
+$strawberry->message();
+$strawberry->intro();
+?>
+```
+
+#### PHP - What is Inheritance?
+Inheritance in OOP = When a class derives from another class.
+
+The child class will inherit all the public and protected properties and methods from the parent class. In addition, it can have its own properties and methods.
+
+An inherited class is defined by using the extends keyword.
+
+Let's look at an example:
+
+Example
+```
+<?php
+class Fruit {
+  public $name;
+  public $color;
+  public function __construct($name, $color) {
+    $this->name = $name;
+    $this->color = $color;
+  }
+  public function intro() {
+    echo "The fruit is {$this->name} and the color is {$this->color}.";
+  }
+}
+
+// Strawberry is inherited from Fruit
+class Strawberry extends Fruit {
+  public function message() {
+    echo "Am I a fruit or a berry? ";
+  }
+}
+$strawberry = new Strawberry("Strawberry", "red");
+$strawberry->message();
+$strawberry->intro();
+?>
+```
+
+Example Explained
+The Strawberry class is inherited from the Fruit class.
+
+This means that the Strawberry class can use the public $name and $color properties as well as the public __construct() and intro() methods from the Fruit class because of inheritance.
+
+The Strawberry class also has its own method: message().
+
+#### PHP - Inheritance and the Protected Access Modifier
+In the previous chapter we learned that protected properties or methods can be accessed within the class and by classes derived from that class. What does that mean?
+
+Let's look at an example:
+
+Example
+```
+<?php
+class Fruit {
+  public $name;
+  public $color;
+  public function __construct($name, $color) {
+    $this->name = $name;
+    $this->color = $color;
+  }
+  protected function intro() {
+    echo "The fruit is {$this->name} and the color is {$this->color}.";
+  }
+}
+
+class Strawberry extends Fruit {
+  public function message() {
+    echo "Am I a fruit or a berry? ";
+  }
+}
+
+// Try to call all three methods from outside class
+$strawberry = new Strawberry("Strawberry", "red");  // OK. __construct() is public
+$strawberry->message(); // OK. message() is public
+$strawberry->intro(); // ERROR. intro() is protected
+?>
+```
+In the example above we see that if we try to call a protected method (intro()) from outside the class, we will receive an error. public methods will work fine!
+
+Let's look at another example:
+
+Example
+```
+<?php
+class Fruit {
+  public $name;
+  public $color;
+  public function __construct($name, $color) {
+    $this->name = $name;
+    $this->color = $color;
+  }
+  protected function intro() {
+    echo "The fruit is {$this->name} and the color is {$this->color}.";
+  }
+}
+
+class Strawberry extends Fruit {
+  public function message() {
+    echo "Am I a fruit or a berry? ";
+    // Call protected method from within derived class - OK
+    $this -> intro();
+  }
+}
+
+$strawberry = new Strawberry("Strawberry", "red"); // OK. __construct() is public
+$strawberry->message(); // OK. message() is public and it calls intro() (which is protected) from within the derived class
+?>
+```
+In the example above we see that all works fine! It is because we call the protected method (intro()) from inside the derived class.
+
+#### 
+PHP - The final Keyword
+The final keyword can be used to prevent class inheritance or to prevent method overriding.
+
+The following example shows how to prevent class inheritance:
+
+Example
+```
+<?php
+final class Fruit {
+  // some code
+}
+
+// will result in error
+class Strawberry extends Fruit {
+  // some code
+}
+?>
+```
+The following example shows how to prevent method overriding:
+
+Example
+```
+<?php
+class Fruit {
+  final public function intro() {
+    // some code
+  }
+}
+
+class Strawberry extends Fruit {
+  // will result in error
+  public function intro() {
+    // some code
+  }
+}
+?>
+```
