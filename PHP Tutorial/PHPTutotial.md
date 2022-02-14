@@ -2389,8 +2389,8 @@ if (!filter_var($ip, FILTER_VALIDATE_IP) === false) {
 The following example uses the filter_var() function to first remove all illegal characters from the $email variable, then check if it is a valid email address:
 
 Example
-<?php
 ```
+<?php
 $email = "john.doe@example.com";
 
 // Remove all illegal characters from email
