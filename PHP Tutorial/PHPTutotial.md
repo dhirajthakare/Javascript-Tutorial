@@ -1649,6 +1649,94 @@ krsort($age);
 ?>
 ```
 
+### PHP Array Functions
+
+#### PHP Array Introduction
+The array functions allow you to access and manipulate arrays.
+
+Simple and multi-dimensional arrays are supported.
+
+###### PHP Array Functions
+Function	Description
+array()	Creates an array
+array_change_key_case()	Changes all keys in an array to lowercase or uppercase
+array_chunk()	Splits an array into chunks of arrays
+array_column()	Returns the values from a single column in the input array
+array_combine()	Creates an array by using the elements from one "keys" array and one "values" array
+array_count_values()	Counts all the values of an array
+array_diff()	Compare arrays, and returns the differences (compare values only)
+array_diff_assoc()	Compare arrays, and returns the differences (compare keys and values)
+array_diff_key()	Compare arrays, and returns the differences (compare keys only)
+array_diff_uassoc()	Compare arrays, and returns the differences (compare keys and values, using a user-defined key comparison function)
+array_diff_ukey()	Compare arrays, and returns the differences (compare keys only, using a user-defined key comparison function)
+array_fill()	Fills an array with values
+array_fill_keys()	Fills an array with values, specifying keys
+array_filter()	Filters the values of an array using a callback function
+array_flip()	Flips/Exchanges all keys with their associated values in an array
+array_intersect()	Compare arrays, and returns the matches (compare values only)
+array_intersect_assoc()	Compare arrays and returns the matches (compare keys and values)
+array_intersect_key()	Compare arrays, and returns the matches (compare keys only)
+array_intersect_uassoc()	Compare arrays, and returns the matches (compare keys and values, using a user-defined key comparison function)
+array_intersect_ukey()	Compare arrays, and returns the matches (compare keys only, using a user-defined key comparison function)
+array_key_exists()	Checks if the specified key exists in the array
+array_keys()	Returns all the keys of an array
+array_map()	Sends each value of an array to a user-made function, which returns new values
+array_merge()	Merges one or more arrays into one array
+array_merge_recursive()	Merges one or more arrays into one array recursively
+array_multisort()	Sorts multiple or multi-dimensional arrays
+array_pad()	Inserts a specified number of items, with a specified value, to an array
+array_pop()	Deletes the last element of an array
+array_product()	Calculates the product of the values in an array
+array_push()	Inserts one or more elements to the end of an array
+array_rand()	Returns one or more random keys from an array
+array_reduce()	Returns an array as a string, using a user-defined function
+array_replace()	Replaces the values of the first array with the values from following arrays
+array_replace_recursive()	Replaces the values of the first array with the values from following arrays recursively
+array_reverse()	Returns an array in the reverse order
+array_search()	Searches an array for a given value and returns the key
+array_shift()	Removes the first element from an array, and returns the value of the removed element
+array_slice()	Returns selected parts of an array
+array_splice()	Removes and replaces specified elements of an array
+array_sum()	Returns the sum of the values in an array
+array_udiff()	Compare arrays, and returns the differences (compare values only, using a user-defined key comparison function)
+array_udiff_assoc()	Compare arrays, and returns the differences (compare keys and values, using a built-in function to compare the keys and a user-defined function to compare the values)
+array_udiff_uassoc()	Compare arrays, and returns the differences (compare keys and values, using two user-defined key comparison functions)
+array_uintersect()	Compare arrays, and returns the matches (compare values only, using a user-defined key comparison function)
+array_uintersect_assoc()	Compare arrays, and returns the matches (compare keys and values, using a built-in function to compare the keys and a user-defined function to compare the values)
+array_uintersect_uassoc()	Compare arrays, and returns the matches (compare keys and values, using two user-defined key comparison functions)
+array_unique()	Removes duplicate values from an array
+array_unshift()	Adds one or more elements to the beginning of an array
+array_values()	Returns all the values of an array
+array_walk()	Applies a user function to every member of an array
+array_walk_recursive()	Applies a user function recursively to every member of an array
+arsort()	Sorts an associative array in descending order, according to the value
+asort()	Sorts an associative array in ascending order, according to the value
+compact()	Create array containing variables and their values
+count()	Returns the number of elements in an array
+current()	Returns the current element in an array
+each()	Deprecated from PHP 7.2. Returns the current key and value pair from an array
+end()	Sets the internal pointer of an array to its last element
+extract()	Imports variables into the current symbol table from an array
+in_array()	Checks if a specified value exists in an array
+key()	Fetches a key from an array
+krsort()	Sorts an associative array in descending order, according to the key
+ksort()	Sorts an associative array in ascending order, according to the key
+list()	Assigns variables as if they were an array
+natcasesort()	Sorts an array using a case insensitive "natural order" algorithm
+natsort()	Sorts an array using a "natural order" algorithm
+next()	Advance the internal array pointer of an array
+pos()	Alias of current()
+prev()	Rewinds the internal array pointer
+range()	Creates an array containing a range of elements
+reset()	Sets the internal pointer of an array to its first element
+rsort()	Sorts an indexed array in descending order
+shuffle()	Shuffles an array
+sizeof()	Alias of count()
+sort()	Sorts an indexed array in ascending order
+uasort()	Sorts an array by values using a user-defined comparison function
+uksort()	Sorts an array by keys using a user-defined comparison function
+usort()	Sorts an array using a user-defined comparison function
+
 ### PHP Global Variables - Superglobals
 Some predefined variables in PHP are "superglobals", which means that they are always accessible, regardless of scope - and you can access them from any function, class or file without having to do anything special.
 
@@ -3678,3 +3766,706 @@ $arr = ["a", "b", "c"];
 printIterable($arr);
 ?>
 ```
+
+## PHP MySQL Database
+With PHP, you can connect to and manipulate databases.
+
+MySQL is the most popular database system used with PHP.
+
+### What is MySQL?
+MySQL is a database system used on the web
+MySQL is a database system that runs on a server
+MySQL is ideal for both small and large applications
+MySQL is very fast, reliable, and easy to use
+MySQL uses standard SQL
+MySQL compiles on a number of platforms
+MySQL is free to download and use
+MySQL is developed, distributed, and supported by Oracle Corporation
+MySQL is named after co-founder Monty Widenius's daughter: My
+
+The data in a MySQL database are stored in tables. A table is a collection of related data, and it consists of columns and rows.
+
+Databases are useful for storing information categorically. A company may have a database with the following tables:
+
+Employees
+Products
+Customers
+Orders
+
+#### PHP + MySQL Database System
+PHP combined with MySQL are cross-platform (you can develop in Windows and serve on a Unix platform)
+
+#### Database Queries
+A query is a question or a request.
+
+We can query a database for specific information and have a recordset returned.
+
+Look at the following query (using standard SQL):
+
+SELECT LastName FROM Employees
+The query above selects all the data in the "LastName" column from the "Employees" table.
+
+##### Facts About MySQL Database
+MySQL is the de-facto standard database system for web sites with HUGE volumes of both data and end-users (like Facebook, Twitter, and Wikipedia).
+
+Another great thing about MySQL is that it can be scaled down to support embedded database applications.
+
+#### PHP Connect to MySQL
+PHP 5 and later can work with a MySQL database using:
+
+MySQLi extension (the "i" stands for improved)
+PDO (PHP Data Objects)
+Earlier versions of PHP used the MySQL extension. However, this extension was deprecated in 2012.
+
+#### Should I Use MySQLi or PDO?
+If you need a short answer, it would be "Whatever you like".
+
+Both MySQLi and PDO have their advantages:
+
+PDO will work on 12 different database systems, whereas MySQLi will only work with MySQL databases.
+
+So, if you have to switch your project to use another database, PDO makes the process easy. You only have to change the connection string and a few queries. With MySQLi, you will need to rewrite the entire code - queries included.
+
+Both are object-oriented, but MySQLi also offers a procedural API.
+
+Both support Prepared Statements. Prepared Statements protect from SQL injection, and are very important for web application security.
+
+#### MySQL Examples in Both MySQLi and PDO Syntax
+In this, and in the following chapters we demonstrate three ways of working with PHP and MySQL:
+
+MySQLi (object-oriented)
+MySQLi (procedural)
+PDO
+
+####  Open a Connection to MySQL
+Before we can access data in the MySQL database, we need to be able to connect to the server:
+
+Example (MySQLi Object-Oriented)
+```
+<?php
+$servername = "localhost";
+$username = "username";
+$password = "password";
+
+// Create connection
+$conn = new mysqli($servername, $username, $password);
+
+// Check connection
+if ($conn->connect_error) {
+  die("Connection failed: " . $conn->connect_error);
+}
+
+// Check connection
+//if (mysqli_connect_error()) {
+//  die("Database connection failed: " . mysqli_connect_error());
+// }
+echo "Connected successfully";
+?>
+```
+
+Example (MySQLi Procedural)
+```
+<?php
+$servername = "localhost";
+$username = "username";
+$password = "password";
+
+// Create connection
+$conn = mysqli_connect($servername, $username, $password);
+
+// Check connection
+if (!$conn) {
+  die("Connection failed: " . mysqli_connect_error());
+}
+echo "Connected successfully";
+?>
+```
+
+### Create a MySQL Database Using MySQLi and PDO
+The CREATE DATABASE statement is used to create a database in MySQL.
+
+The following examples create a database named "myDB":
+
+Example (MySQLi Object-oriented)
+```
+<?php
+$servername = "localhost";
+$username = "username";
+$password = "password";
+
+// Create connection
+$conn = new mysqli($servername, $username, $password);
+// Check connection
+if ($conn->connect_error) {
+  die("Connection failed: " . $conn->connect_error);
+}
+
+// Create database
+$sql = "CREATE DATABASE myDB";
+if ($conn->query($sql) === TRUE) {
+  echo "Database created successfully";
+} else {
+  echo "Error creating database: " . $conn->error;
+}
+
+$conn->close();
+?>
+```
+
+Example (MySQLi Procedural)
+```
+<?php
+$servername = "localhost";
+$username = "username";
+$password = "password";
+
+// Create connection
+$conn = mysqli_connect($servername, $username, $password);
+// Check connection
+if (!$conn) {
+  die("Connection failed: " . mysqli_connect_error());
+}
+
+// Create database
+$sql = "CREATE DATABASE myDB";
+if (mysqli_query($conn, $sql)) {
+  echo "Database created successfully";
+} else {
+  echo "Error creating database: " . mysqli_error($conn);
+}
+
+mysqli_close($conn);
+?>
+```
+
+### Create a MySQL Table Using MySQLi and PDO
+The CREATE TABLE statement is used to create a table in MySQL.
+
+We will create a table named "MyGuests", with five columns: "id", "firstname", "lastname", "email" and "reg_date":
+```
+CREATE TABLE MyGuests (
+id INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+firstname VARCHAR(30) NOT NULL,
+lastname VARCHAR(30) NOT NULL,
+email VARCHAR(50),
+reg_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+)
+```
+
+### PHP MySQL Insert Data
+#### Insert Data Into MySQL Using MySQLi and PDO
+After a database and a table have been created, we can start adding data in them.
+
+Here are some syntax rules to follow:
+
+The SQL query must be quoted in PHP
+String values inside the SQL query must be quoted
+Numeric values must not be quoted
+The word NULL must not be quoted
+The INSERT INTO statement is used to add new records to a MySQL table:
+```
+INSERT INTO table_name (column1, column2, column3,...)
+VALUES (value1, value2, value3,...)
+```
+
+### PHP MySQL Get Last Inserted ID
+Get ID of The Last Inserted Record
+
+Example (MySQLi Object-oriented)
+```
+<?php
+$servername = "localhost";
+$username = "username";
+$password = "password";
+$dbname = "myDB";
+
+// Create connection
+$conn = new mysqli($servername, $username, $password, $dbname);
+// Check connection
+if ($conn->connect_error) {
+  die("Connection failed: " . $conn->connect_error);
+}
+
+$sql = "INSERT INTO MyGuests (firstname, lastname, email)
+VALUES ('John', 'Doe', 'john@example.com')";
+
+if ($conn->query($sql) === TRUE) {
+  $last_id = $conn->insert_id;
+  echo "New record created successfully. Last inserted ID is: " . $last_id;
+} else {
+  echo "Error: " . $sql . "<br>" . $conn->error;
+}
+
+$conn->close();
+?>
+```
+Example (MySQLi Procedural)
+```
+<?php
+$servername = "localhost";
+$username = "username";
+$password = "password";
+$dbname = "myDB";
+
+// Create connection
+$conn = mysqli_connect($servername, $username, $password, $dbname);
+// Check connection
+if (!$conn) {
+  die("Connection failed: " . mysqli_connect_error());
+}
+
+$sql = "INSERT INTO MyGuests (firstname, lastname, email)
+VALUES ('John', 'Doe', 'john@example.com')";
+
+if (mysqli_query($conn, $sql)) {
+  $last_id = mysqli_insert_id($conn);
+  echo "New record created successfully. Last inserted ID is: " . $last_id;
+} else {
+  echo "Error: " . $sql . "<br>" . mysqli_error($conn);
+}
+
+mysqli_close($conn);
+?>
+```
+
+### PHP MySQL Insert Multiple Records
+Insert Multiple Records Into MySQL Using MySQLi and PDO
+Multiple SQL statements must be executed with the mysqli_multi_query() function.
+
+The following examples add three new records to the "MyGuests" table:
+
+Example (MySQLi Object-oriented)
+```
+<?php
+$servername = "localhost";
+$username = "username";
+$password = "password";
+$dbname = "myDB";
+
+// Create connection
+$conn = new mysqli($servername, $username, $password, $dbname);
+// Check connection
+if ($conn->connect_error) {
+  die("Connection failed: " . $conn->connect_error);
+}
+
+$sql = "INSERT INTO MyGuests (firstname, lastname, email)
+VALUES ('John', 'Doe', 'john@example.com');";
+$sql .= "INSERT INTO MyGuests (firstname, lastname, email)
+VALUES ('Mary', 'Moe', 'mary@example.com');";
+$sql .= "INSERT INTO MyGuests (firstname, lastname, email)
+VALUES ('Julie', 'Dooley', 'julie@example.com')";
+
+if ($conn->multi_query($sql) === TRUE) {
+  echo "New records created successfully";
+} else {
+  echo "Error: " . $sql . "<br>" . $conn->error;
+}
+
+$conn->close();
+?>
+```
+
+Example (MySQLi Procedural)
+```
+<?php
+$servername = "localhost";
+$username = "username";
+$password = "password";
+$dbname = "myDB";
+
+// Create connection
+$conn = mysqli_connect($servername, $username, $password, $dbname);
+// Check connection
+if (!$conn) {
+  die("Connection failed: " . mysqli_connect_error());
+}
+
+$sql = "INSERT INTO MyGuests (firstname, lastname, email)
+VALUES ('John', 'Doe', 'john@example.com');";
+$sql .= "INSERT INTO MyGuests (firstname, lastname, email)
+VALUES ('Mary', 'Moe', 'mary@example.com');";
+$sql .= "INSERT INTO MyGuests (firstname, lastname, email)
+VALUES ('Julie', 'Dooley', 'julie@example.com')";
+
+if (mysqli_multi_query($conn, $sql)) {
+  echo "New records created successfully";
+} else {
+  echo "Error: " . $sql . "<br>" . mysqli_error($conn);
+}
+
+mysqli_close($conn);
+?>
+```
+
+#### Prepared Statements in MySQLi
+The following example uses prepared statements and bound parameters in MySQLi:
+
+Example (MySQLi with Prepared Statements)
+```
+<?php
+$servername = "localhost";
+$username = "username";
+$password = "password";
+$dbname = "myDB";
+
+// Create connection
+$conn = new mysqli($servername, $username, $password, $dbname);
+
+// Check connection
+if ($conn->connect_error) {
+  die("Connection failed: " . $conn->connect_error);
+}
+
+// prepare and bind
+$stmt = $conn->prepare("INSERT INTO MyGuests (firstname, lastname, email) VALUES (?, ?, ?)");
+$stmt->bind_param("sss", $firstname, $lastname, $email);
+
+// set parameters and execute
+$firstname = "John";
+$lastname = "Doe";
+$email = "john@example.com";
+$stmt->execute();
+
+$firstname = "Mary";
+$lastname = "Moe";
+$email = "mary@example.com";
+$stmt->execute();
+
+$firstname = "Julie";
+$lastname = "Dooley";
+$email = "julie@example.com";
+$stmt->execute();
+
+echo "New records created successfully";
+
+$stmt->close();
+$conn->close();
+?>
+```
+
+Code lines to explain from the example above:
+```
+"INSERT INTO MyGuests (firstname, lastname, email) VALUES (?, ?, ?)"
+```
+In our SQL, we insert a question mark (?) where we want to substitute in an integer, string, double or blob value.
+
+Then, have a look at the bind_param() function:
+```
+$stmt->bind_param("sss", $firstname, $lastname, $email);
+```
+This function binds the parameters to the SQL query and tells the database what the parameters are. The "sss" argument lists the types of data that the parameters are. The s character tells mysql that the parameter is a string.
+
+The argument may be one of four types:
+
+i - integer
+d - double
+s - string
+b - BLOB
+We must have one of these for each parameter.
+
+By telling mysql what type of data to expect, we minimize the risk of SQL injections.
+
+Note: If we want to insert any data from external sources (like user input), it is very important that the data is sanitized and validated.
+
+### PHP MySQL Select Data
+
+Select Data From a MySQL Database
+The SELECT statement is used to select data from one or more tables:
+```
+SELECT column_name(s) FROM table_name
+```
+or we can use the * character to select ALL columns from a table:
+```
+SELECT * FROM table_name
+```
+
+### Select Data With MySQLi
+The following example selects the id, firstname and lastname columns from the MyGuests table and displays it on the page:
+
+Example (MySQLi Object-oriented)
+```
+<?php
+$servername = "localhost";
+$username = "username";
+$password = "password";
+$dbname = "myDB";
+
+// Create connection
+$conn = new mysqli($servername, $username, $password, $dbname);
+// Check connection
+if ($conn->connect_error) {
+  die("Connection failed: " . $conn->connect_error);
+}
+
+$sql = "SELECT id, firstname, lastname FROM MyGuests";
+$result = $conn->query($sql);
+
+if ($result->num_rows > 0) {
+  // output data of each row
+  while($row = $result->fetch_assoc()) {
+    echo "id: " . $row["id"]. " - Name: " . $row["firstname"]. " " . $row["lastname"]. "<br>";
+  }
+} else {
+  echo "0 results";
+}
+$conn->close();
+?>
+```
+
+Code lines to explain from the example above:
+
+First, we set up an SQL query that selects the id, firstname and lastname columns from the MyGuests table. The next line of code runs the query and puts the resulting data into a variable called $result.
+
+Then, the function num_rows() checks if there are more than zero rows returned.
+
+If there are more than zero rows returned, the function fetch_assoc() puts all the results into an associative array that we can loop through. The while() loop loops through the result set and outputs the data from the id, firstname and lastname columns.
+
+
+The following example shows the same as the example above, in the MySQLi procedural way:
+
+Example (MySQLi Procedural)
+```
+<?php
+$servername = "localhost";
+$username = "username";
+$password = "password";
+$dbname = "myDB";
+
+// Create connection
+$conn = mysqli_connect($servername, $username, $password, $dbname);
+// Check connection
+if (!$conn) {
+  die("Connection failed: " . mysqli_connect_error());
+}
+
+$sql = "SELECT id, firstname, lastname FROM MyGuests";
+$result = mysqli_query($conn, $sql);
+
+if (mysqli_num_rows($result) > 0) {
+  // output data of each row
+  while($row = mysqli_fetch_assoc($result)) {
+    echo "id: " . $row["id"]. " - Name: " . $row["firstname"]. " " . $row["lastname"]. "<br>";
+  }
+} else {
+  echo "0 results";
+}
+
+mysqli_close($conn);
+?>
+```
+
+Example (MySQLi Object-oriented)
+```
+<?php
+$servername = "localhost";
+$username = "username";
+$password = "password";
+$dbname = "myDB";
+
+// Create connection
+$conn = new mysqli($servername, $username, $password, $dbname);
+// Check connection
+if ($conn->connect_error) {
+  die("Connection failed: " . $conn->connect_error);
+}
+
+$sql = "SELECT id, firstname, lastname FROM MyGuests";
+$result = $conn->query($sql);
+
+if ($result->num_rows > 0) {
+  echo "<table><tr><th>ID</th><th>Name</th></tr>";
+  // output data of each row
+  while($row = $result->fetch_assoc()) {
+    echo "<tr><td>".$row["id"]."</td><td>".$row["firstname"]." ".$row["lastname"]."</td></tr>";
+  }
+  echo "</table>";
+} else {
+  echo "0 results";
+}
+$conn->close();
+?>
+```
+
+#### PHP MySQL Use The WHERE Clause
+Select and Filter Data From a MySQL Database
+The WHERE clause is used to filter records.
+
+The WHERE clause is used to extract only those records that fulfill a specified condition.
+```
+SELECT column_name(s) FROM table_name WHERE column_name operator value 
+```
+
+### PHP MySQL Use The ORDER BY Clause
+Select and Order Data From a MySQL Database
+The ORDER BY clause is used to sort the result-set in ascending or descending order.
+
+The ORDER BY clause sorts the records in ascending order by default. To sort the records in descending order, use the DESC keyword.
+```
+SELECT column_name(s) FROM table_name ORDER BY column_name(s) ASC|DESC 
+```
+
+### PHP MySQL Delete Data
+Delete Data From a MySQL Table Using MySQLi and PDO
+The DELETE statement is used to delete records from a table:
+```
+DELETE FROM table_name
+WHERE some_column = some_value
+```
+
+### PHP MySQL Update Data
+Update Data In a MySQL Table Using MySQLi and PDO
+The UPDATE statement is used to update existing records in a table:
+```
+UPDATE table_name
+SET column1=value, column2=value2,...
+WHERE some_column=some_value 
+```
+
+### PHP MySQL Limit Data Selections
+Limit Data Selections From a MySQL Database
+MySQL provides a LIMIT clause that is used to specify the number of records to return.
+
+The LIMIT clause makes it easy to code multi page results or pagination with SQL, and is very useful on large tables. Returning a large number of records can impact on performance.
+
+Assume we wish to select all records from 1 - 30 (inclusive) from a table called "Orders". The SQL query would then look like this:
+```
+$sql = "SELECT * FROM Orders LIMIT 30";
+```
+
+The SQL query below says "return only 10 records, start on record 16 (OFFSET 15)":
+
+$sql = "SELECT * FROM Orders LIMIT 10 OFFSET 15";
+You could also use a shorter syntax to achieve the same result:
+
+$sql = "SELECT * FROM Orders LIMIT 15, 10";
+Notice that the numbers are reversed when you use a comma.
+
+## PHP XML Parsers
+
+### PHP SimpleXML - Read From String
+The PHP simplexml_load_string() function is used to read XML data from a string.
+
+Assume we have a variable that contains XML data, like this:
+Example
+```
+<?php
+$myXMLData =
+"<?xml version='1.0' encoding='UTF-8'?>
+<note>
+<to>Tove</to>
+<from>Jani</from>
+<heading>Reminder</heading>
+<body>Don't forget me this weekend!</body>
+</note>";
+
+$xml=simplexml_load_string($myXMLData) or die("Error: Cannot create object");
+print_r($xml);
+?>
+```
+### PHP SimpleXML - Read From File
+The PHP ```simplexml_load_file()``` function is used to read XML data from a file.
+
+Example
+```
+<?php
+$xml=simplexml_load_file("note.xml") or die("Error: Cannot create object");
+print_r($xml);
+?>
+```
+
+### PHP SimpleXML - Get Node Values
+Get the node values from the "note.xml" file:
+
+Example
+```
+<?php
+$xml=simplexml_load_file("note.xml") or die("Error: Cannot create object");
+echo $xml->to . "<br>";
+echo $xml->from . "<br>";
+echo $xml->heading . "<br>";
+echo $xml->body;
+?>
+```
+
+### Another XML File
+Assume we have an XML file called "books.xml", that looks like this: 
+```
+<?xml version="1.0" encoding="utf-8"?>
+<bookstore>
+  <book category="COOKING">
+    <title lang="en">Everyday Italian</title>
+    <author>Giada De Laurentiis</author>
+    <year>2005</year>
+    <price>30.00</price>
+  </book>
+  <book category="CHILDREN">
+    <title lang="en">Harry Potter</title>
+    <author>J K. Rowling</author>
+    <year>2005</year>
+    <price>29.99</price>
+  </book>
+  <book category="WEB">
+    <title lang="en-us">XQuery Kick Start</title>
+    <author>James McGovern</author>
+    <year>2003</year>
+    <price>49.99</price>
+  </book>
+  <book category="WEB">
+    <title lang="en-us">Learning XML</title>
+    <author>Erik T. Ray</author>
+    <year>2003</year>
+    <price>39.95</price>
+  </book>
+</bookstore>
+```
+#### PHP SimpleXML - Get Node Values of Specific Elements
+The following example gets the node value of the <title> element in the first and second <book> elements in the "books.xml" file: 
+when two or more nodes fields are same  .
+
+Example
+<?php
+$xml=simplexml_load_file("books.xml") or die("Error: Cannot create object");
+echo $xml->book[0]->title . "<br>";
+echo $xml->book[1]->title;
+?>
+
+#### PHP SimpleXML - Get Node Values - Loop
+The following example loops through all the <book> elements in the "books.xml" file, and gets the node values of the <title>, <author>, <year>, and <price> elements:
+
+Example
+```
+<?php
+$xml=simplexml_load_file("books.xml") or die("Error: Cannot create object");
+foreach($xml->children() as $books) {
+  echo $books->title . ", ";
+  echo $books->author . ", ";
+  echo $books->year . ", ";
+  echo $books->price . "<br>";
+}
+?>
+```
+#### PHP SimpleXML - Get Attribute Values
+The following example gets the attribute value of the "category" attribute of the first <book> element and the attribute value of the "lang" attribute of the <title> element in the second <book> element:
+
+Example
+```
+<?php
+$xml=simplexml_load_file("books.xml") or die("Error: Cannot create object");
+echo $xml->book[0]['category'] . "<br>";
+echo $xml->book[1]->title['lang'];
+?>
+```
+
+#### PHP SimpleXML - Get Attribute Values
+The following example gets the attribute value of the "category" attribute of the first <book> element and the attribute value of the "lang" attribute of the <title> element in the second <book> element:
+
+Example
+```
+<?php
+$xml=simplexml_load_file("books.xml") or die("Error: Cannot create object");
+echo $xml->book[0]['category'] . "<br>";
+echo $xml->book[1]->title['lang'];
+?>
+```
+
