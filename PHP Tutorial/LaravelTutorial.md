@@ -760,3 +760,521 @@ After running this command, your cached routes file will be loaded on every requ
 You may use the route:clear command to clear the route cache:
 
 php artisan route:clear
+
+## Middleware
+
+### Introduction
+Middleware provide a convenient mechanism for inspecting and filtering HTTP requests entering your application. For example, Laravel includes a middleware that verifies the user of your application is authenticated. If the user is not authenticated, the middleware will redirect the user to your application's login screen. However, if the user is authenticated, the middleware will allow the request to proceed further into the application.
+
+Additional middleware can be written to perform a variety of tasks besides authentication. For example, a logging middleware might log all incoming requests to your application. There are several middleware included in the Laravel framework, including middleware for authentication and CSRF protection. All of these middleware are located in the app/Http/Middleware directory.
+
+### Defining Middleware
+To create a new middleware, use the make:middleware Artisan command:
+```
+php artisan make:middleware EnsureTokenIsValid
+```
+
+This command will place a new EnsureTokenIsValid class within your app/Http/Middleware directory. In this middleware, we will only allow access to the route if the supplied token input matches a specified value. Otherwise, we will redirect the users back to the home URI:
+
+```
+<?php
+ 
+namespace App\Http\Middleware;
+ 
+use Closure;
+ 
+class EnsureTokenIsValid
+{
+    /**
+     * Handle an incoming request.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  \Closure  $next
+     * @return mixed
+     */
+    public function handle($request, Closure $next)
+    {
+        if ($request->input('token') !== 'my-secret-token') {
+            return redirect('home');
+        }
+ 
+        return $next($request);
+    }
+}
+
+```
+As you can see, if the given token does not match our secret token, the middleware will return an HTTP redirect to the client; otherwise, the request will be passed further into the application. To pass the request deeper into the application (allowing the middleware to "pass"), you should call the $next callback with the $request.
+
+It's best to envision middleware as a series of "layers" HTTP requests must pass through before they hit your application. Each layer can examine the request and even reject it entirely.
+
+Note : All middleware are resolved via the service container, so you may type-hint any dependencies you need within a middleware's constructor.
+
+### Middleware & Responses
+
+Of course, a middleware can perform tasks before or after passing the request deeper into the application. For example, the following middleware would perform some task before the request is handled by the application:
+```
+<?php
+ 
+namespace App\Http\Middleware;
+ 
+use Closure;
+ 
+class BeforeMiddleware
+{
+    public function handle($request, Closure $next)
+    {
+        // Perform action
+ 
+        return $next($request);
+    }
+}
+```
+However, this middleware would perform its task after the request is handled by the application:
+```
+<?php
+ 
+namespace App\Http\Middleware;
+ 
+use Closure;
+ 
+class AfterMiddleware
+{
+    public function handle($request, Closure $next)
+    {
+        $response = $next($request);
+ 
+        // Perform action
+ 
+        return $response;
+    }
+}
+```
+
+### Registering Middleware
+
+#### Global Middleware
+If you want a middleware to run during every HTTP request to your application, list the middleware class in the $middleware property of your app/Http/Kernel.php class.
+
+#### Assigning Middleware To Routes
+If you would like to assign middleware to specific routes, you should first assign the middleware a key in your application's app/Http/Kernel.php file. By default, the $routeMiddleware property of this class contains entries for the middleware included with Laravel. You may add your own middleware to this list and assign it a key of your choosing:
+```
+// Within App\Http\Kernel class...
+ 
+protected $routeMiddleware = [
+    'auth' => \App\Http\Middleware\Authenticate::class,
+    'auth.basic' => \Illuminate\Auth\Middleware\AuthenticateWithBasicAuth::class,
+    'bindings' => \Illuminate\Routing\Middleware\SubstituteBindings::class,
+    'cache.headers' => \Illuminate\Http\Middleware\SetCacheHeaders::class,
+    'can' => \Illuminate\Auth\Middleware\Authorize::class,
+    'guest' => \App\Http\Middleware\RedirectIfAuthenticated::class,
+    'signed' => \Illuminate\Routing\Middleware\ValidateSignature::class,
+    'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
+    'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
+];
+```
+
+Once the middleware has been defined in the HTTP kernel, you may use the middleware method to assign middleware to a route:
+```
+Route::get('/profile', function () {
+    //
+})->middleware('auth');
+```
+You may assign multiple middleware to the route by passing an array of middleware names to the middleware method:
+```
+Route::get('/', function () {
+    //
+})->middleware(['first', 'second']);
+
+```
+When assigning middleware, you may also pass the fully qualified class name:
+
+use App\Http\Middleware\EnsureTokenIsValid;
+``` 
+Route::get('/profile', function () {
+    //
+})->middleware(EnsureTokenIsValid::class);
+```
+this will be also work if we did not define middeleware in kernel.php file 
+
+#### Excluding Middleware
+When assigning middleware to a group of routes, you may occasionally need to prevent the middleware from being applied to an individual route within the group. You may accomplish this using the withoutMiddleware method:
+```
+use App\Http\Middleware\EnsureTokenIsValid;
+ 
+Route::middleware([EnsureTokenIsValid::class])->group(function () {
+    Route::get('/', function () {
+        //
+    });
+ 
+    Route::get('/profile', function () {
+        //
+    })->withoutMiddleware([EnsureTokenIsValid::class]);
+});
+```
+You may also exclude a given set of middleware from an entire group of route definitions:
+```
+use App\Http\Middleware\EnsureTokenIsValid;
+ 
+Route::withoutMiddleware([EnsureTokenIsValid::class])->group(function () {
+    Route::get('/profile', function () {
+        //
+    });
+});
+```
+The withoutMiddleware method can only remove route middleware and does not apply to global middleware.
+
+#### Middleware Groups
+Sometimes you may want to group several middleware under a single key to make them easier to assign to routes. You may accomplish this using the $middlewareGroups property of your HTTP kernel.
+
+Out of the box, Laravel comes with web and api middleware groups that contain common middleware you may want to apply to your web and API routes. Remember, these middleware groups are automatically applied by your application's App\Providers\RouteServiceProvider service provider to routes within your corresponding web and api route files:
+```
+/**
+ * The application's route middleware groups.
+ *
+ * @var array
+ */
+protected $middlewareGroups = [
+    'web' => [
+        \App\Http\Middleware\EncryptCookies::class,
+        \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
+        \Illuminate\Session\Middleware\StartSession::class,
+        // \Illuminate\Session\Middleware\AuthenticateSession::class,
+        \Illuminate\View\Middleware\ShareErrorsFromSession::class,
+        \App\Http\Middleware\VerifyCsrfToken::class,
+        \Illuminate\Routing\Middleware\SubstituteBindings::class,
+    ],
+ 
+    'api' => [
+        'throttle:api',
+        \Illuminate\Routing\Middleware\SubstituteBindings::class,
+    ],
+];
+```
+Middleware groups may be assigned to routes and controller actions using the same syntax as individual middleware. Again, middleware groups make it more convenient to assign many middleware to a route at once:
+```
+Route::get('/', function () {
+    //
+})->middleware('web');
+ 
+Route::middleware(['web'])->group(function () {
+    //
+});
+
+```
+
+Note :- Out of the box, the web and api middleware groups are automatically applied to your application's corresponding routes/web.php and routes/api.php files by the App\Providers\RouteServiceProvider.
+
+### Sorting Middleware
+Rarely, you may need your middleware to execute in a specific order but not have control over their order when they are assigned to the route. In this case, you may specify your middleware priority using the $middlewarePriority property of your app/Http/Kernel.php file. This property may not exist in your HTTP kernel by default. If it does not exist, you may copy its default definition below:
+```
+/**
+ * The priority-sorted list of middleware.
+ *
+ * This forces non-global middleware to always be in the given order.
+ *
+ * @var string[]
+ */
+protected $middlewarePriority = [
+    \Illuminate\Cookie\Middleware\EncryptCookies::class,
+    \Illuminate\Session\Middleware\StartSession::class,
+    \Illuminate\View\Middleware\ShareErrorsFromSession::class,
+    \Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests::class,
+    \Illuminate\Routing\Middleware\ThrottleRequests::class,
+    \Illuminate\Routing\Middleware\ThrottleRequestsWithRedis::class,
+    \Illuminate\Session\Middleware\AuthenticateSession::class,
+    \Illuminate\Routing\Middleware\SubstituteBindings::class,
+    \Illuminate\Auth\Middleware\Authorize::class,
+];
+```
+### Middleware Parameters
+Middleware can also receive additional parameters. For example, if your application needs to verify that the authenticated user has a given "role" before performing a given action, you could create an EnsureUserHasRole middleware that receives a role name as an additional argument.
+
+Additional middleware parameters will be passed to the middleware after the $next argument:
+```
+<?php
+ 
+namespace App\Http\Middleware;
+ 
+use Closure;
+ 
+class EnsureUserHasRole
+{
+    /**
+     * Handle the incoming request.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  \Closure  $next
+     * @param  string  $role
+     * @return mixed
+     */
+    public function handle($request, Closure $next, $role)
+    {
+        if (! $request->user()->hasRole($role)) {
+            // Redirect...
+        }
+ 
+        return $next($request);
+    }
+ 
+}
+```
+Middleware parameters may be specified when defining the route by separating the middleware name and parameters with a :. Multiple parameters should be delimited by commas:
+```
+Route::put('/post/{id}', function ($id) {
+    //
+})->middleware('role:editor');
+```
+
+### Terminable Middleware
+Sometimes a middleware may need to do some work after the HTTP response has been sent to the browser. If you define a terminate method on your middleware and your web server is using FastCGI, the terminate method will automatically be called after the response is sent to the browser:
+```
+<?php
+ 
+namespace Illuminate\Session\Middleware;
+ 
+use Closure;
+ 
+class TerminatingMiddleware
+{
+    /**
+     * Handle an incoming request.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  \Closure  $next
+     * @return mixed
+     */
+    public function handle($request, Closure $next)
+    {
+        return $next($request);
+    }
+ 
+    /**
+     * Handle tasks after the response has been sent to the browser.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  \Illuminate\Http\Response  $response
+     * @return void
+     */
+    public function terminate($request, $response)
+    {
+        // ...
+    }
+}
+```
+The terminate method should receive both the request and the response. Once you have defined a terminable middleware, you should add it to the list of routes or global middleware in the app/Http/Kernel.php file.
+
+## CSRF Protection
+### Introduction
+Cross-site request forgeries are a type of malicious exploit whereby unauthorized commands are performed on behalf of an authenticated user. Thankfully, Laravel makes it easy to protect your application from cross-site request forgery (CSRF) attacks.
+
+### An Explanation Of The Vulnerability
+In case you're not familiar with cross-site request forgeries, let's discuss an example of how this vulnerability can be exploited. Imagine your application has a /user/email route that accepts a POST request to change the authenticated user's email address. Most likely, this route expects an email input field to contain the email address the user would like to begin using.
+
+Without CSRF protection, a malicious website could create an HTML form that points to your application's /user/email route and submits the malicious user's own email address:
+```
+<form action="https://your-application.com/user/email" method="POST">
+    <input type="email" value="malicious-email@example.com">
+</form>
+ 
+<script>
+    document.forms[0].submit();
+</script>
+```
+
+If the malicious website automatically submits the form when the page is loaded, the malicious user only needs to lure an unsuspecting user of your application to visit their website and their email address will be changed in your application.
+
+To prevent this vulnerability, we need to inspect every incoming POST, PUT, PATCH, or DELETE request for a secret session value that the malicious application is unable to access.
+
+### Preventing CSRF Requests
+Laravel automatically generates a CSRF "token" for each active user session managed by the application. This token is used to verify that the authenticated user is the person actually making the requests to the application. Since this token is stored in the user's session and changes each time the session is regenerated, a malicious application is unable to access it.
+
+The current session's CSRF token can be accessed via the request's session or via the csrf_token helper function:
+```
+use Illuminate\Http\Request;
+ 
+Route::get('/token', function (Request $request) {
+    $token = $request->session()->token();
+ 
+    $token = csrf_token();
+ 
+    // ...
+});
+```
+
+Anytime you define a "POST", "PUT", "PATCH", or "DELETE" HTML form in your application, you should include a hidden CSRF _token field in the form so that the CSRF protection middleware can validate the request. For convenience, you may use the @csrf Blade directive to generate the hidden token input field:
+```
+<form method="POST" action="/profile">
+    @csrf
+ 
+    <!-- Equivalent to... -->
+    <input type="hidden" name="_token" value="{{ csrf_token() }}" />
+</form>
+```
+
+The App\Http\Middleware\VerifyCsrfToken middleware, which is included in the web middleware group by default, will automatically verify that the token in the request input matches the token stored in the session. When these two tokens match, we know that the authenticated user is the one initiating the request.
+
+
+### CSRF Tokens & SPAs
+If you are building an SPA that is utilizing Laravel as an API backend, you should consult the Laravel Sanctum documentation(https://laravel.com/docs/9.x/sanctum) for information on authenticating with your API and protecting against CSRF vulnerabilities.
+
+
+### Excluding URIs From CSRF Protection
+Sometimes you may wish to exclude a set of URIs from CSRF protection. For example, if you are using Stripe to process payments and are utilizing their webhook system, you will need to exclude your Stripe webhook handler route from CSRF protection since Stripe will not know what CSRF token to send to your routes.
+
+Typically, you should place these kinds of routes outside of the web middleware group that the App\Providers\RouteServiceProvider applies to all routes in the routes/web.php file. However, you may also exclude the routes by adding their URIs to the $except property of the VerifyCsrfToken middleware:
+```
+<?php
+ 
+namespace App\Http\Middleware;
+ 
+use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken as Middleware;
+ 
+class VerifyCsrfToken extends Middleware
+{
+    /**
+     * The URIs that should be excluded from CSRF verification.
+     *
+     * @var array
+     */
+    protected $except = [
+        'stripe/*',
+        'http://example.com/foo/bar',
+        'http://example.com/foo/*',
+    ];
+}
+
+```
+
+Note := For convenience, the CSRF middleware is automatically disabled for all routes when running tests.
+
+### X-CSRF-TOKEN
+In addition to checking for the CSRF token as a POST parameter, the App\Http\Middleware\VerifyCsrfToken middleware will also check for the X-CSRF-TOKEN request header. You could, for example, store the token in an HTML meta tag:
+```
+<meta name="csrf-token" content="{{ csrf_token() }}">
+```
+Then, you can instruct a library like jQuery to automatically add the token to all request headers. This provides simple, convenient CSRF protection for your AJAX based applications using legacy JavaScript technology:
+```
+$.ajaxSetup({
+    headers: {
+        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+    }
+});
+```
+
+### X-XSRF-TOKEN
+Laravel stores the current CSRF token in an encrypted XSRF-TOKEN cookie that is included with each response generated by the framework. You can use the cookie value to set the X-XSRF-TOKEN request header.
+
+This cookie is primarily sent as a developer convenience since some JavaScript frameworks and libraries, like Angular and Axios, automatically place its value in the X-XSRF-TOKEN header on same-origin requests.
+
+By default, the resources/js/bootstrap.js file includes the Axios HTTP library which will automatically send the X-XSRF-TOKEN header for you.
+
+## Controllers
+
+### Introduction
+
+Instead of defining all of your request handling logic as closures in your route files, you may wish to organize this behavior using "controller" classes. Controllers can group related request handling logic into a single class. For example, a UserController class might handle all incoming requests related to users, including showing, creating, updating, and deleting users. By default, controllers are stored in the app/Http/Controllers directory.
+
+### Writing Controllers
+### Basic Controllers
+Let's take a look at an example of a basic controller. Note that the controller extends the base controller class included with Laravel: App\Http\Controllers\Controller:
+```
+<?php
+ 
+namespace App\Http\Controllers;
+ 
+use App\Http\Controllers\Controller;
+use App\Models\User;
+ 
+class UserController extends Controller
+{
+    /**
+     * Show the profile for a given user.
+     *
+     * @param  int  $id
+     * @return \Illuminate\View\View
+     */
+    public function show($id)
+    {
+        return view('user.profile', [
+            'user' => User::findOrFail($id)
+        ]);
+    }
+}
+```
+
+You can define a route to this controller method like so:
+
+``` 
+use App\Http\Controllers\UserController;
+
+Route::get('/user/{id}', [UserController::class, 'show']);
+```
+When an incoming request matches the specified route URI, the show method on the App\Http\Controllers\UserController class will be invoked and the route parameters will be passed to the method.
+
+Note :- Controllers are not required to extend a base class. However, you will not have access to convenient features such as the middleware and authorize methods.
+
+#### Single Action Controllers
+If a controller action is particularly complex, you might find it convenient to dedicate an entire controller class to that single action. To accomplish this, you may define a single __invoke method within the controller:
+```
+<?php
+ 
+namespace App\Http\Controllers;
+ 
+use App\Http\Controllers\Controller;
+use App\Models\User;
+ 
+class ProvisionServer extends Controller
+{
+    /**
+     * Provision a new web server.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function __invoke()
+    {
+        // ...
+    }
+}
+```
+When registering routes for single action controllers, you do not need to specify a controller method. Instead, you may simply pass the name of the controller to the router:
+```
+use App\Http\Controllers\ProvisionServer;
+ 
+Route::post('/server', ProvisionServer::class);
+```
+You may generate an invokable controller by using the --invokable option of the make:controller Artisan command:
+```
+php artisan make:controller ProvisionServer --invokable
+```
+Note : - Controller stubs may be customized using stub publishing.
+
+Controller Middleware
+Middleware may be assigned to the controller's routes in your route files:
+```
+Route::get('profile', [UserController::class, 'show'])->middleware('auth');
+```
+Or, you may find it convenient to specify middleware within your controller's constructor. Using the middleware method within your controller's constructor, you can assign middleware to the controller's actions:
+```
+class UserController extends Controller
+{
+    /**
+     * Instantiate a new controller instance.
+     *
+     * @return void
+     */
+    public function __construct()
+    {
+        $this->middleware('auth');
+        $this->middleware('log')->only('index');
+        $this->middleware('subscribed')->except('store');
+    }
+}
+Controllers also allow you to register middleware using a closure. This provides a convenient way to define an inline middleware for a single controller without defining an entire middleware class:
+
+$this->middleware(function ($request, $next) {
+    return $next($request);
+});
+```
+### Resource Controllers
+If you think of each Eloquent model in your application as a "resource", it is typical to perform the same sets of actions against each resource in your application. For example, imagine your application contains a Photo model and a Movie model. It is likely that users can create, read, update, or delete these resources.
+
