@@ -1989,3 +1989,844 @@ public function hosts()
 }
 ```
 The allSubdomainsOfApplicationUrl helper method will return a regular expression matching all subdomains of your application's app.url configuration value. This helper method provides a convenient way to allow all of your application's subdomains when building an application that utilizes wildcard subdomains.
+
+## HTTP Responses
+### Creating Responses
+Strings & Arrays
+All routes and controllers should return a response to be sent back to the user's browser. Laravel provides several different ways to return responses. The most basic response is returning a string from a route or controller. The framework will automatically convert the string into a full HTTP response:
+```
+Route::get('/', function () {
+    return 'Hello World';
+});
+```
+In addition to returning strings from your routes and controllers, you may also return arrays. The framework will automatically convert the array into a JSON response:
+```
+Route::get('/', function () {
+    return [1, 2, 3];
+});
+```
+
+Did you know you can also return Eloquent collections from your routes or controllers? They will automatically be converted to JSON. Give it a shot!
+
+#### Response Objects
+Typically, you won't just be returning simple strings or arrays from your route actions. Instead, you will be returning full Illuminate\Http\Response instances or views.
+
+Returning a full Response instance allows you to customize the response's HTTP status code and headers. A Response instance inherits from the Symfony\Component\HttpFoundation\Response class, which provides a variety of methods for building HTTP responses:
+```
+Route::get('/home', function () {
+    return response('Hello World', 200)
+                  ->header('Content-Type', 'text/plain');
+});
+```
+
+#### Eloquent Models & Collections
+You may also return Eloquent ORM models and collections directly from your routes and controllers. When you do, Laravel will automatically convert the models and collections to JSON responses while respecting the model's hidden attributes:
+
+use App\Models\User;
+``` 
+Route::get('/user/{user}', function (User $user) {
+    return $user;
+});
+```
+
+#### Attaching Headers To Responses
+Keep in mind that most response methods are chainable, allowing for the fluent construction of response instances. For example, you may use the header method to add a series of headers to the response before sending it back to the user:
+```
+return response($content)
+            ->header('Content-Type', $type)
+            ->header('X-Header-One', 'Header Value')
+            ->header('X-Header-Two', 'Header Value');
+```
+
+Or, you may use the withHeaders method to specify an array of headers to be added to the response:
+```
+return response($content)
+            ->withHeaders([
+                'Content-Type' => $type,
+                'X-Header-One' => 'Header Value',
+                'X-Header-Two' => 'Header Value',
+            ]);
+```
+#### Cache Control Middleware
+Laravel includes a cache.headers middleware, which may be used to quickly set the Cache-Control header for a group of routes. Directives should be provided using the "snake case" equivalent of the corresponding cache-control directive and should be separated by a semicolon. If etag is specified in the list of directives, an MD5 hash of the response content will automatically be set as the ETag identifier:
+```
+Route::middleware('cache.headers:public;max_age=2628000;etag')->group(function () {
+    Route::get('/privacy', function () {
+        // ...
+    });
+ 
+    Route::get('/terms', function () {
+        // ...
+    });
+});
+```
+
+#### Attaching Cookies To Responses
+You may attach a cookie to an outgoing Illuminate\Http\Response instance using the cookie method. You should pass the name, value, and the number of minutes the cookie should be considered valid to this method:
+```
+return response('Hello World')->cookie(
+    'name', 'value', $minutes
+);
+```
+The cookie method also accepts a few more arguments which are used less frequently. Generally, these arguments have the same purpose and meaning as the arguments that would be given to PHP's native setcookie method:
+```
+return response('Hello World')->cookie(
+    'name', 'value', $minutes, $path, $domain, $secure, $httpOnly
+);
+```
+If you would like to ensure that a cookie is sent with the outgoing response but you do not yet have an instance of that response, you can use the Cookie facade to "queue" cookies for attachment to the response when it is sent. The queue method accepts the arguments needed to create a cookie instance. These cookies will be attached to the outgoing response before it is sent to the browser:
+```
+use Illuminate\Support\Facades\Cookie;
+ 
+Cookie::queue('name', 'value', $minutes);
+```
+
+#### Generating Cookie Instances
+If you would like to generate a Symfony\Component\HttpFoundation\Cookie instance that can be attached to a response instance at a later time, you may use the global cookie helper. This cookie will not be sent back to the client unless it is attached to a response instance:
+```
+$cookie = cookie('name', 'value', $minutes);
+ 
+return response('Hello World')->cookie($cookie);
+```
+#### Expiring Cookies Early
+You may remove a cookie by expiring it via the withoutCookie method of an outgoing response:
+```
+return response('Hello World')->withoutCookie('name');
+```
+If you do not yet have an instance of the outgoing response, you may use the Cookie facade's expire method to expire a cookie:
+```
+Cookie::expire('name');
+```
+
+#### Cookies & Encryption
+By default, all cookies generated by Laravel are encrypted and signed so that they can't be modified or read by the client. If you would like to disable encryption for a subset of cookies generated by your application, you may use the $except property of the App\Http\Middleware\EncryptCookies middleware, which is located in the app/Http/Middleware directory:
+```
+/**
+ * The names of the cookies that should not be encrypted.
+ *
+ * @var array
+ */
+protected $except = [
+    'cookie_name',
+];
+
+```
+
+### Redirects
+Redirect responses are instances of the Illuminate\Http\RedirectResponse class, and contain the proper headers needed to redirect the user to another URL. There are several ways to generate a RedirectResponse instance. The simplest method is to use the global redirect helper:
+```
+Route::get('/dashboard', function () {
+    return redirect('home/dashboard');
+});
+```
+
+Sometimes you may wish to redirect the user to their previous location, such as when a submitted form is invalid. You may do so by using the global back helper function. Since this feature utilizes the session, make sure the route calling the back function is using the web middleware group:
+```
+Route::post('/user/profile', function () {
+    // Validate the request...
+ 
+    return back()->withInput();
+});
+```
+
+#### Redirecting To Named Routes
+When you call the redirect helper with no parameters, an instance of Illuminate\Routing\Redirector is returned, allowing you to call any method on the Redirector instance. For example, to generate a RedirectResponse to a named route, you may use the route method:
+```
+return redirect()->route('login');
+```
+If your route has parameters, you may pass them as the second argument to the route method:
+```
+// For a route with the following URI: /profile/{id}
+ 
+return redirect()->route('profile', ['id' => 1]);
+```
+
+#### Populating Parameters Via Eloquent Models
+If you are redirecting to a route with an "ID" parameter that is being populated from an Eloquent model, you may pass the model itself. The ID will be extracted automatically:
+```
+// For a route with the following URI: /profile/{id}
+ 
+return redirect()->route('profile', [$user]);
+```
+
+If you would like to customize the value that is placed in the route parameter, you can specify the column in the route parameter definition (/profile/{id:slug}) or you can override the getRouteKey method on your Eloquent model:
+```
+/**
+ * Get the value of the model's route key.
+ *
+ * @return mixed
+ */
+public function getRouteKey()
+{
+    return $this->slug;
+}
+```
+##### Redirecting To Controller Actions
+You may also generate redirects to controller actions. To do so, pass the controller and action name to the action method:
+```
+use App\Http\Controllers\UserController;
+ 
+return redirect()->action([UserController::class, 'index']);
+```
+If your controller route requires parameters, you may pass them as the second argument to the action method:
+```
+return redirect()->action(
+    [UserController::class, 'profile'], ['id' => 1]
+);
+```
+
+##### Redirecting To External Domains
+Sometimes you may need to redirect to a domain outside of your application. You may do so by calling the away method, which creates a RedirectResponse without any additional URL encoding, validation, or verification:
+```
+return redirect()->away('https://www.google.com');
+```
+
+#### Redirecting With Flashed Session Data
+Redirecting to a new URL and flashing data to the session are usually done at the same time. Typically, this is done after successfully performing an action when you flash a success message to the session. For convenience, you may create a RedirectResponse instance and flash data to the session in a single, fluent method chain:
+```
+Route::post('/user/profile', function () {
+    // ...
+ 
+    return redirect('dashboard')->with('status', 'Profile updated!');
+});
+```
+After the user is redirected, you may display the flashed message from the session. For example, using Blade syntax:
+```
+@if (session('status'))
+    <div class="alert alert-success">
+        {{ session('status') }}
+    </div>
+@endif
+
+```
+
+##### Redirecting With Input
+You may use the withInput method provided by the RedirectResponse instance to flash the current request's input data to the session before redirecting the user to a new location. This is typically done if the user has encountered a validation error. Once the input has been flashed to the session, you may easily retrieve it during the next request to repopulate the form:
+``
+return back()->withInput();
+``
+
+##### Other Response Types
+The response helper may be used to generate other types of response instances. When the response helper is called without arguments, an implementation of the Illuminate\Contracts\Routing\ResponseFactory contract is returned. This contract provides several helpful methods for generating responses.
+
+##### View Responses
+If you need control over the response's status and headers but also need to return a view as the response's content, you should use the view method:
+```
+return response()
+            ->view('hello', $data, 200)
+            ->header('Content-Type', $type);
+
+ ```
+Of course, if you do not need to pass a custom HTTP status code or custom headers, you may use the global view helper function.
+
+##### JSON Responses
+The json method will automatically set the Content-Type header to application/json, as well as convert the given array to JSON using the json_encode PHP function:
+```
+return response()->json([
+    'name' => 'Abigail',
+    'state' => 'CA',
+]);
+```
+If you would like to create a JSONP response, you may use the json method in combination with the withCallback method:
+```
+return response()
+            ->json(['name' => 'Abigail', 'state' => 'CA'])
+            ->withCallback($request->input('callback'));
+```
+####  File Downloads
+The download method may be used to generate a response that forces the user's browser to download the file at the given path. The download method accepts a filename as the second argument to the method, which will determine the filename that is seen by the user downloading the file. Finally, you may pass an array of HTTP headers as the third argument to the method:
+```
+return response()->download($pathToFile);
+ 
+return response()->download($pathToFile, $name, $headers);
+```
+Note :- Symfony HttpFoundation, which manages file downloads, requires the file being downloaded to have an ASCII filename.
+
+### Views
+#### Introduction
+Of course, it's not practical to return entire HTML documents strings directly from your routes and controllers. Thankfully, views provide a convenient way to place all of our HTML in separate files. Views separate your controller / application logic from your presentation logic and are stored in the resources/views directory. A simple view might look something like this:
+```
+<!-- View stored in resources/views/greeting.blade.php -->
+ 
+<html>
+    <body>
+        <h1>Hello, {{ $name }}</h1>
+    </body>
+</html>
+```
+
+Since this view is stored at resources/views/greeting.blade.php, we may return it using the global view helper like so:
+```
+Route::get('/', function () {
+    return view('greeting', ['name' => 'James']);
+});
+```
+
+#### Creating & Rendering Views
+You may create a view by placing a file with the .blade.php extension in your application's resources/views directory. The .blade.php extension informs the framework that the file contains a Blade template. Blade templates contain HTML as well as Blade directives that allow you to easily echo values, create "if" statements, iterate over data, and more.
+
+Once you have created a view, you may return it from one of your application's routes or controllers using the global view helper:
+```
+Route::get('/', function () {
+    return view('greeting', ['name' => 'James']);
+});
+```
+Views may also be returned using the View facade:
+```
+use Illuminate\Support\Facades\View;
+ 
+return View::make('greeting', ['name' => 'James']);
+```
+As you can see, the first argument passed to the view helper corresponds to the name of the view file in the resources/views directory. The second argument is an array of data that should be made available to the view. In this case, we are passing the name variable, which is displayed in the view using Blade syntax.
+
+#### Nested View Directories
+Views may also be nested within subdirectories of the resources/views directory. "Dot" notation may be used to reference nested views. For example, if your view is stored at resources/views/admin/profile.blade.php, you may return it from one of your application's routes / controllers like so:
+```
+return view('admin.profile', $data);
+```
+Note :- View directory names should not contain the . character.
+
+#### Creating The First Available View
+Using the View facade's first method, you may create the first view that exists in a given array of views. This may be useful if your application or package allows views to be customized or overwritten:
+```
+use Illuminate\Support\Facades\View;
+ 
+return View::first(['custom.admin', 'admin'], $data);
+```
+Determining If A View Exists
+If you need to determine if a view exists, you may use the View facade. The exists method will return true if the view exists:
+```
+use Illuminate\Support\Facades\View;
+ 
+if (View::exists('emails.customer')) {
+    //
+}
+```
+#### Passing Data To Views
+As you saw in the previous examples, you may pass an array of data to views to make that data available to the view:
+```
+return view('greetings', ['name' => 'Victoria']);
+```
+When passing information in this manner, the data should be an array with key / value pairs. After providing data to a view, you can then access each value within your view using the data's keys, such as <?php echo $name; ?>.
+
+As an alternative to passing a complete array of data to the view helper function, you may use the with method to add individual pieces of data to the view. The with method returns an instance of the view object so that you can continue chaining methods before returning the view:
+```
+return view('greeting')
+            ->with('name', 'Victoria')
+            ->with('occupation', 'Astronaut');
+
+```
+
+#### Sharing Data With All Views
+Occasionally, you may need to share data with all views that are rendered by your application. You may do so using the View facade's share method. Typically, you should place calls to the share method within a service provider's boot method. You are free to add them to the App\Providers\AppServiceProvider class or generate a separate service provider to house them:
+```
+<?php
+ 
+namespace App\Providers;
+ 
+use Illuminate\Support\Facades\View;
+ 
+class AppServiceProvider extends ServiceProvider
+{
+    /**
+     * Register any application services.
+     *
+     * @return void
+     */
+    public function register()
+    {
+        //
+    }
+ 
+    /**
+     * Bootstrap any application services.
+     *
+     * @return void
+     */
+    public function boot()
+    {
+        View::share('key', 'value');
+    }
+}
+```
+Further you can Learn service provider use on view on following link https://laravel.com/docs/9.x/views
+
+## Blade Templates
+
+### Introduction
+Blade is the simple, yet powerful templating engine that is included with Laravel. Unlike some PHP templating engines, Blade does not restrict you from using plain PHP code in your templates. In fact, all Blade templates are compiled into plain PHP code and cached until they are modified, meaning Blade adds essentially zero overhead to your application. Blade template files use the .blade.php file extension and are typically stored in the resources/views directory.
+```
+Route::get('/', function () {
+    return view('greeting', ['name' => 'Finn']);
+});
+```
+
+### Displaying Data
+You may display data that is passed to your Blade views by wrapping the variable in curly braces. For example, given the following route:
+```
+Route::get('/', function () {
+    return view('welcome', ['name' => 'Samantha']);
+});
+You may display the contents of the name variable like so:
+
+Hello, {{ $name }}.
+```
+
+Note : Blade's {{ }} echo statements are automatically sent through PHP's htmlspecialchars function to prevent XSS attacks
+You are not limited to displaying the contents of the variables passed to the view. You may also echo the results of any PHP function. In fact, you can put any PHP code you wish inside of a Blade echo statement:
+
+```
+The current UNIX timestamp is {{ time() }}.
+```
+
+### HTML Entity Encoding
+By default, Blade (and the Laravel e helper) will double encode HTML entities. If you would like to disable double encoding, call the Blade::withoutDoubleEncoding method from the boot method of your AppServiceProvider:
+```
+<?php
+ 
+namespace App\Providers;
+ 
+use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\ServiceProvider;
+ 
+class AppServiceProvider extends ServiceProvider
+{
+    /**
+     * Bootstrap any application services.
+     *
+     * @return void
+     */
+    public function boot()
+    {
+        Blade::withoutDoubleEncoding();
+    }
+}
+```
+### Displaying Unescaped Data
+By default, Blade {{ }} statements are automatically sent through PHP's htmlspecialchars function to prevent XSS attacks. If you do not want your data to be escaped, you may use the following syntax:
+```
+Hello, {!! $name !!}.
+```
+Be very careful when echoing content that is supplied by users of your application. You should typically use the escaped, double curly brace syntax to prevent XSS attacks when displaying user supplied data.
+### Blade & JavaScript Frameworks
+Since many JavaScript frameworks also use "curly" braces to indicate a given expression should be displayed in the browser, you may use the @ symbol to inform the Blade rendering engine an expression should remain untouched. For example:
+```
+<h1>Laravel</h1>
+ 
+Hello, @{{ name }}.
+```
+In this example, the @ symbol will be removed by Blade; however, {{ name }} expression will remain untouched by the Blade engine, allowing it to be rendered by your JavaScript framework.
+
+The @ symbol may also be used to escape Blade directives:
+```
+{{-- Blade template --}}
+@@if()
+ 
+<!-- HTML output -->
+@if()
+```
+
+### If Statements
+You may construct if statements using the @if, @elseif, @else, and @endif directives. These directives function identically to their PHP counterparts:
+```
+@if (count($records) === 1)
+    I have one record!
+@elseif (count($records) > 1)
+    I have multiple records!
+@else
+    I don't have any records!
+@endif
+```
+For convenience, Blade also provides an @unless directive:
+``
+@unless (Auth::check())
+    You are not signed in.
+@endunless
+``
+
+In addition to the conditional directives already discussed, the @isset and @empty directives may be used as convenient shortcuts for their respective PHP functions:
+```
+@isset($records)
+    // $records is defined and is not null...
+@endisset
+ 
+@empty($records)
+    // $records is "empty"...
+@endempty
+```
+
+### Authentication Directives
+The @auth and @guest directives may be used to quickly determine if the current user is authenticated or is a guest:
+```
+@auth
+    // The user is authenticated...
+@endauth
+ 
+@guest
+    // The user is not authenticated...
+@endguest
+```
+
+If needed, you may specify the authentication guard that should be checked when using the @auth and @guest directives:
+```
+@auth('admin')
+    // The user is authenticated...
+@endauth
+ 
+@guest('admin')
+    // The user is not authenticated...
+@endguest
+```
+
+### Environment Directives
+You may check if the application is running in the production environment using the @production directive:
+```
+@production
+    // Production specific content...
+@endproduction
+```
+Or, you may determine if the application is running in a specific environment using the @env directive:
+```
+@env('staging')
+    // The application is running in "staging"...
+@endenv
+ 
+@env(['staging', 'production'])
+    // The application is running in "staging" or "production"...
+@endenv
+```
+
+### Section Directives
+You may determine if a template inheritance section has content using the @hasSection directive:
+```
+@hasSection('navigation')
+    <div class="pull-right">
+        @yield('navigation')
+    </div>
+ 
+    <div class="clearfix"></div>
+@endif
+```
+You may use the sectionMissing directive to determine if a section does not have content:
+```
+@sectionMissing('navigation')
+    <div class="pull-right">
+        @include('default-navigation')
+    </div>
+@endif
+```
+
+### Switch Statements
+Switch statements can be constructed using the @switch, @case, @break, @default and @endswitch directives:
+```
+@switch($i)
+    @case(1)
+        First case...
+        @break
+ 
+    @case(2)
+        Second case...
+        @break
+ 
+    @default
+        Default case...
+@endswitch
+
+```
+
+### Loops
+In addition to conditional statements, Blade provides simple directives for working with PHP's loop structures. Again, each of these directives functions identically to their PHP counterparts:
+```
+@for ($i = 0; $i < 10; $i++)
+    The current value is {{ $i }}
+@endfor
+ 
+@foreach ($users as $user)
+    <p>This is user {{ $user->id }}</p>
+@endforeach
+ 
+@forelse ($users as $user)
+    <li>{{ $user->name }}</li>
+@empty
+    <p>No users</p>
+@endforelse
+ 
+@while (true)
+    <p>I'm looping forever.</p>
+@endwhile
+```
+
+Note: While iterating through a foreach loop, you may use the loop variable to gain valuable information about the loop, such as whether you are in the first or last iteration through the loop
+
+When using loops you may also end the loop or skip the current iteration using the @continue and @break directives:
+```
+@foreach ($users as $user)
+    @if ($user->type == 1)
+        @continue
+    @endif
+ 
+    <li>{{ $user->name }}</li>
+ 
+    @if ($user->number == 5)
+        @break
+    @endif
+@endforeach
+```
+You may also include the continuation or break condition within the directive declaration:
+```
+@foreach ($users as $user)
+    @continue($user->type == 1)
+ 
+    <li>{{ $user->name }}</li>
+ 
+    @break($user->number == 5)
+@endforeach
+```
+### The Loop Variable
+While iterating through a foreach loop, a $loop variable will be available inside of your loop. This variable provides access to some useful bits of information such as the current loop index and whether this is the first or last iteration through the loop:
+```
+@foreach ($users as $user)
+    @if ($loop->first)
+        This is the first iteration.
+    @endif
+ 
+    @if ($loop->last)
+        This is the last iteration.
+    @endif
+ 
+    <p>This is user {{ $user->id }}</p>
+@endforeach
+```
+ 
+ If you are in a nested loop, you may access the parent loop's $loop variable via the parent property:
+```
+@foreach ($users as $user)
+    @foreach ($user->posts as $post)
+        @if ($loop->parent->first)
+            This is the first iteration of the parent loop.
+        @endif
+    @endforeach
+@endforeach
+```
+```
+Property	Description
+$loop->index	The index of the current loop iteration (starts at 0).
+$loop->iteration	The current loop iteration (starts at 1).
+$loop->remaining	The iterations remaining in the loop.
+$loop->count	The total number of items in the array being iterated.
+$loop->first	Whether this is the first iteration through the loop.
+$loop->last	Whether this is the last iteration through the loop.
+$loop->even	Whether this is an even iteration through the loop.
+$loop->odd	Whether this is an odd iteration through the loop.
+$loop->depth	The nesting level of the current loop.
+$loop->parent	When in a nested loop, the parent's loop variable.
+```
+
+### Conditional Classes
+The @class directive conditionally compiles a CSS class string. The directive accepts an array of classes where the array key contains the class or classes you wish to add, while the value is a boolean expression. If the array element has a numeric key, it will always be included in the rendered class list:
+```
+@php
+    $isActive = false;
+    $hasError = true;
+@endphp
+ 
+<span @class([
+    'p-4',
+    'font-bold' => $isActive,
+    'text-gray-500' => ! $isActive,
+    'bg-red' => $hasError,
+])></span>
+ 
+<span class="p-4 text-gray-500 bg-red"></span>
+```
+
+### Checked / Selected / Disabled
+For convenience, you may use the @checked directive to easily indicate if a given HTML checkbox input is "checked". This directive will echo checked if the provided condition evaluates to true:
+```
+<input type="checkbox"
+        name="active"
+        value="active"
+        @checked(old('active', $user->active)) />
+Likewise, the @selected directive may be used to indicate if a given select option should be "selected":
+
+<select name="version">
+    @foreach ($product->versions as $version)
+        <option value="{{ $version }}" @selected(old('version') == $version)>
+            {{ $version }}
+        </option>
+    @endforeach
+</select>
+```
+
+Additionally, the @disabled directive may be used to indicate if a given element should be "disabled":
+```
+<button type="submit" @disabled($errors->isNotEmpty())>Submit</button>
+```
+
+### Including Subviews
+While you're free to use the @include directive, Blade components provide similar functionality and offer several benefits over the @include directive such as data and attribute binding.
+
+Blade's @include directive allows you to include a Blade view from within another view. All variables that are available to the parent view will be made available to the included view:
+```
+<div>
+    @include('shared.errors')
+ 
+    <form>
+        <!-- Form Contents -->
+    </form>
+</div>
+```
+
+Even though the included view will inherit all data available in the parent view, you may also pass an array of additional data that should be made available to the included view:
+```
+@include('view.name', ['status' => 'complete'])
+```
+If you attempt to @include a view which does not exist, Laravel will throw an error. If you would like to include a view that may or may not be present, you should use the @includeIf directive:
+```
+@includeIf('view.name', ['status' => 'complete'])
+```
+
+If you would like to @include a view if a given boolean expression evaluates to true or false, you may use the @includeWhen and
+ ```
+@includeUnless directives:
+
+@includeWhen($boolean, 'view.name', ['status' => 'complete'])
+ 
+@includeUnless($boolean, 'view.name', ['status' => 'complete'])
+```
+
+To include the first view that exists from a given array of views, you may use the includeFirst directive:
+```
+@includeFirst(['custom.admin', 'admin'], ['status' => 'complete'])
+```
+
+You should avoid using the __DIR__ and __FILE__ constants in your Blade views, since they will refer to the location of the cached, compiled view.
+
+### Raw PHP
+In some situations, it's useful to embed PHP code into your views. You can use the Blade @php directive to execute a block of plain PHP within your template:
+```
+@php
+    $counter = 1;
+@endphp
+```
+Comments
+Blade also allows you to define comments in your views. However, unlike HTML comments, Blade comments are not included in the HTML returned by your application:
+
+{{-- This comment will not be present in the rendered HTML --}}
+
+## URL Generation
+### Introduction
+Laravel provides several helpers to assist you in generating URLs for your application. These helpers are primarily helpful when building links in your templates and API responses, or when generating redirect responses to another part of your application.
+
+
+### The Basics
+#### Generating URLs
+The url helper may be used to generate arbitrary URLs for your application. The generated URL will automatically use the scheme (HTTP or HTTPS) and host from the current request being handled by the application:
+```
+$post = App\Models\Post::find(1);
+ 
+echo url("/posts/{$post->id}");
+ 
+// http://example.com/posts/1
+```
+
+#### Accessing The Current URL
+If no path is provided to the url helper, an Illuminate\Routing\UrlGenerator instance is returned, allowing you to access information about the current URL:
+```
+// Get the current URL without the query string...
+echo url()->current();
+ 
+// Get the current URL including the query string...
+echo url()->full();
+ 
+// Get the full URL for the previous request...
+echo url()->previous();
+Each of these methods may also be accessed via the URL facade:
+
+use Illuminate\Support\Facades\URL;
+ 
+echo URL::current();
+
+```
+
+#### URLs For Named Routes
+The route helper may be used to generate URLs to named routes. Named routes allow you to generate URLs without being coupled to the actual URL defined on the route. Therefore, if the route's URL changes, no changes need to be made to your calls to the route function. For example, imagine your application contains a route defined like the following:
+```
+Route::get('/post/{post}', function (Post $post) {
+    //
+})->name('post.show');
+```
+To generate a URL to this route, you may use the route helper like so:
+```
+echo route('post.show', ['post' => 1]);
+ 
+// http://example.com/post/1
+```
+Of course, the route helper may also be used to generate URLs for routes with multiple parameters:
+```
+Route::get('/post/{post}/comment/{comment}', function (Post $post, Comment $comment) {
+    //
+})->name('comment.show');
+ 
+echo route('comment.show', ['post' => 1, 'comment' => 3]);
+ 
+// http://example.com/post/1/comment/3
+```
+Any additional array elements that do not correspond to the route's definition parameters will be added to the URL's query string:
+```
+echo route('post.show', ['post' => 1, 'search' => 'rocket']);
+ 
+// http://example.com/post/1?search=rocket
+```
+
+#### Eloquent Models
+You will often be generating URLs using the route key (typically the primary key) of Eloquent models. For this reason, you may pass Eloquent models as parameter values. The route helper will automatically extract the model's route key:
+```
+echo route('post.show', ['post' => $post]);
+```
+
+#### Signed URLs
+Laravel allows you to easily create "signed" URLs to named routes. These URLs have a "signature" hash appended to the query string which allows Laravel to verify that the URL has not been modified since it was created. Signed URLs are especially useful for routes that are publicly accessible yet need a layer of protection against URL manipulation.
+
+For example, you might use signed URLs to implement a public "unsubscribe" link that is emailed to your customers. To create a signed URL to a named route, use the signedRoute method of the URL facade:
+```
+use Illuminate\Support\Facades\URL;
+ 
+return URL::signedRoute('unsubscribe', ['user' => 1]);
+```
+If you would like to generate a temporary signed route URL that expires after a specified amount of time, you may use the temporarySignedRoute method. When Laravel validates a temporary signed route URL, it will ensure that the expiration timestamp that is encoded into the signed URL has not elapsed:
+```
+use Illuminate\Support\Facades\URL;
+ 
+return URL::temporarySignedRoute(
+    'unsubscribe', now()->addMinutes(30), ['user' => 1]
+);
+```
+
+Validating Signed Route Requests
+To verify that an incoming request has a valid signature, you should call the hasValidSignature method on the incoming 
+```
+Illuminate\Http\Request instance:
+
+use Illuminate\Http\Request;
+ 
+Route::get('/unsubscribe/{user}', function (Request $request) {
+    if (! $request->hasValidSignature()) {
+        abort(401);
+    }
+ 
+    // ...
+})->name('unsubscribe');
+```
+
+#### URLs For Controller Actions
+The action function generates a URL for the given controller action:
+```
+use App\Http\Controllers\HomeController;
+ 
+$url = action([HomeController::class, 'index']);
+If the controller method accepts route parameters, you may pass an associative array of route parameters as the second argument to the function:
+
+$url = action([UserController::class, 'profile'], ['id' => 1]);
+```
+
