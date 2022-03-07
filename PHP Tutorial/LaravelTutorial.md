@@ -2829,4 +2829,598 @@ If the controller method accepts route parameters, you may pass an associative a
 
 $url = action([UserController::class, 'profile'], ['id' => 1]);
 ```
+## HTTP Session
 
+### Introduction
+Since HTTP driven applications are stateless, sessions provide a way to store information about the user across multiple requests. That user information is typically placed in a persistent store / backend that can be accessed from subsequent requests.
+
+### Configuration
+
+Your application's session configuration file is stored at config/session.php. Be sure to review the options available to you in this file. By default, Laravel is configured to use the file session driver, which will work well for many applications. If your application will be load balanced across multiple web servers, you should choose a centralized store that all servers can access, such as Redis or a database.
+
+The session driver configuration option defines where session data will be stored for each request. Laravel ships with several great drivers out of the box:
+
+file - sessions are stored in storage/framework/sessions.
+cookie - sessions are stored in secure, encrypted cookies.
+database - sessions are stored in a relational database.
+memcached / redis - sessions are stored in one of these fast, cache based stores.
+dynamodb - sessions are stored in AWS DynamoDB.
+array - sessions are stored in a PHP array and will not be persisted.
+
+NOte :- 
+The array driver is primarily used during testing and prevents the data stored in the session from being persisted.
+
+#### Driver Prerequisites
+Database
+When using the database session driver, you will need to create a table to contain the session records. An example Schema declaration for the table may be found below:
+```
+Schema::create('sessions', function ($table) {
+    $table->string('id')->primary();
+    $table->foreignId('user_id')->nullable()->index();
+    $table->string('ip_address', 45)->nullable();
+    $table->text('user_agent')->nullable();
+    $table->text('payload');
+    $table->integer('last_activity')->index();
+});
+
+```
+You may use the session:table Artisan command to generate this migration. To learn more about database migrations, you may consult the complete migration documentation:
+```
+php artisan session:table
+php artisan migrate
+```
+
+#### Redis
+Before using Redis sessions with Laravel, you will need to either install the PhpRedis PHP extension via PECL or install the predis/predis package (~1.0) via Composer. For more information on configuring Redis
+
+### Interacting With The Session
+
+When you retrieve an item from the session, you may also pass a default value as the second argument to the get method. This default value will be returned if the specified key does not exist in the session. If you pass a closure as the default value to the get method and the requested key does not exist, the closure will be executed and its result returned:
+```
+$value = $request->session()->get('key', 'default');
+ 
+$value = $request->session()->get('key', function () {
+    return 'default';
+});
+```
+
+### The Global Session Helper
+You may also use the global session PHP function to retrieve and store data in the session. When the session helper is called with a single, string argument, it will return the value of that session key. When the helper is called with an array of key / value pairs, those values will be stored in the session:
+
+```
+Route::get('/home', function () {
+    // Retrieve a piece of data from the session...
+    $value = session('key');
+ 
+    // Specifying a default value...
+    $value = session('key', 'default');
+ 
+    // Store a piece of data in the session...
+    session(['key' => 'value']);
+});
+```
+
+NOte :- There is little practical difference between using the session via an HTTP request instance versus using the global session helper. Both methods are testable via the assertSessionHas method which is available in all of your test cases.
+
+#### Retrieving All Session Data
+If you would like to retrieve all the data in the session, you may use the all method:
+```
+$data = $request->session()->all();
+```
+#### Determining If An Item Exists In The Session
+To determine if an item is present in the session, you may use the has method. The has method returns true if the item is present and is not null:
+```
+if ($request->session()->has('users')) {
+    //
+}
+```
+To determine if an item is present in the session, even if its value is null, you may use the exists method:
+``
+if ($request->session()->exists('users')) {
+    //
+}
+``
+To determine if an item is not present in the session, you may use the missing method. The missing method returns true if the item is null or if the item is not present:
+```
+if ($request->session()->missing('users')) {
+    //
+}
+```
+#### Storing Data
+To store data in the session, you will typically use the request instance's put method or the global session helper:
+```
+// Via a request instance...
+$request->session()->put('key', 'value');
+ 
+// Via the global "session" helper...
+session(['key' => 'value']);
+```
+#### Pushing To Array Session Values
+The push method may be used to push a new value onto a session value that is an array. For example, if the user.teams key contains an array of team names, you may push a new value onto the array like so:
+```
+$request->session()->push('user.teams', 'developers');
+```
+#### Retrieving & Deleting An Item
+The pull method will retrieve and delete an item from the session in a single statement:
+```
+$value = $request->session()->pull('key', 'default');
+```
+Incrementing & Decrementing Session Values
+If your session data contains an integer you wish to increment or decrement, you may use the increment and decrement methods:
+```
+$request->session()->increment('count');
+ 
+$request->session()->increment('count', $incrementBy = 2);
+ 
+$request->session()->decrement('count');
+ 
+$request->session()->decrement('count', $decrementBy = 2);
+```
+
+#### Flash Data
+Sometimes you may wish to store items in the session for the next request. You may do so using the flash method. Data stored in the session using this method will be available immediately and during the subsequent HTTP request. After the subsequent HTTP request, the flashed data will be deleted. Flash data is primarily useful for short-lived status messages:
+```
+$request->session()->flash('status', 'Task was successful!');
+```
+If you need to persist your flash data for several requests, you may use the reflash method, which will keep all of the flash data for an additional request. If you only need to keep specific flash data, you may use the keep method:
+```
+$request->session()->reflash();
+ 
+$request->session()->keep(['username', 'email']);
+```
+To persist your flash data only for the current request, you may use the now method:
+```
+$request->session()->now('status', 'Task was successful!');
+```
+
+#### Deleting Data
+The forget method will remove a piece of data from the session. If you would like to remove all data from the session, you may use the flush method:
+```
+// Forget a single key...
+$request->session()->forget('name');
+ 
+// Forget multiple keys...
+$request->session()->forget(['name', 'status']);
+ 
+$request->session()->flush();
+```
+
+#### Regenerating The Session ID
+Regenerating the session ID is often done in order to prevent malicious users from exploiting a session fixation attack on your application.
+
+Laravel automatically regenerates the session ID during authentication if you are using one of the Laravel application starter kits or Laravel Fortify; however, if you need to manually regenerate the session ID, you may use the regenerate method:
+```
+$request->session()->regenerate();
+```
+If you need to regenerate the session ID and remove all data from the session in a single statement, you may use the invalidate method:
+```
+$request->session()->invalidate();
+```
+
+### Session Blocking
+To utilize session blocking, your application must be using a cache driver that supports atomic locks. Currently, those cache drivers include the memcached, dynamodb, redis, and database drivers. In addition, you may not use the cookie session driver.
+
+## Validation
+####  Introduction
+Laravel provides several different approaches to validate your application's incoming data. It is most common to use the validate method available on all incoming HTTP requests. However, we will discuss other approaches to validation as well.
+
+Laravel includes a wide variety of convenient validation rules that you may apply to data, even providing the ability to validate if values are unique in a given database table. We'll cover each of these validation rules in detail so that you are familiar with all of Laravel's validation features.
+
+#### Validation Quickstart
+To learn about Laravel's powerful validation features, let's look at a complete example of validating a form and displaying the error messages back to the user. By reading this high-level overview, you'll be able to gain a good general understanding of how to validate incoming request data using Laravel:
+
+
+#### Defining The Routes
+First, let's assume we have the following routes defined in our routes/web.php file:
+```
+use App\Http\Controllers\PostController;
+ 
+Route::get('/post/create', [PostController::class, 'create']);
+Route::post('/post', [PostController::class, 'store']);
+```
+The GET route will display a form for the user to create a new blog post, while the POST route will store the new blog post in the database.
+
+#### Creating The Controller
+Next, let's take a look at a simple controller that handles incoming requests to these routes. We'll leave the store method empty for now:
+```
+<?php
+ 
+namespace App\Http\Controllers;
+ 
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+ 
+class PostController extends Controller
+{
+    /**
+     * Show the form to create a new blog post.
+     *
+     * @return \Illuminate\View\View
+     */
+    public function create()
+    {
+        return view('post.create');
+    }
+ 
+    /**
+     * Store a new blog post.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function store(Request $request)
+    {
+        // Validate and store the blog post...
+    }
+}
+```
+#### Writing The Validation Logic
+Now we are ready to fill in our store method with the logic to validate the new blog post. To do this, we will use the validate method provided by the Illuminate\Http\Request object. If the validation rules pass, your code will keep executing normally; however, if validation fails, an Illuminate\Validation\ValidationException exception will be thrown and the proper error response will automatically be sent back to the user.
+
+If validation fails during a traditional HTTP request, a redirect response to the previous URL will be generated. If the incoming request is an XHR request, a JSON response containing the validation error messages will be returned.
+
+To get a better understanding of the validate method, let's jump back into the store method:
+```
+/**
+ * Store a new blog post.
+ *
+ * @param  \Illuminate\Http\Request  $request
+ * @return \Illuminate\Http\Response
+ */
+public function store(Request $request)
+{
+    $validated = $request->validate([
+        'title' => 'required|unique:posts|max:255',
+        'body' => 'required',
+    ]);
+ 
+    // The blog post is valid...
+}
+```
+As you can see, the validation rules are passed into the validate method. Don't worry - all available validation rules are documented. Again, if the validation fails, the proper response will automatically be generated. If the validation passes, our controller will continue executing normally.
+
+Alternatively, validation rules may be specified as arrays of rules instead of a single | delimited string:
+```
+$validatedData = $request->validate([
+    'title' => ['required', 'unique:posts', 'max:255'],
+    'body' => ['required'],
+]);
+```
+In addition, you may use the validateWithBag method to validate a request and store any error messages within a named error bag:
+```
+$validatedData = $request->validateWithBag('post', [
+    'title' => ['required', 'unique:posts', 'max:255'],
+    'body' => ['required'],
+]);
+```
+#### Stopping On First Validation Failure
+Sometimes you may wish to stop running validation rules on an attribute after the first validation failure. To do so, assign the bail rule to the attribute:
+```
+$request->validate([
+    'title' => 'bail|required|unique:posts|max:255',
+    'body' => 'required',
+]);
+```
+In this example, if the unique rule on the title attribute fails, the max rule will not be checked. Rules will be validated in the order they are assigned.
+
+##### A Note On Nested Attributes
+If the incoming HTTP request contains "nested" field data, you may specify these fields in your validation rules using "dot" syntax:
+```
+$request->validate([
+    'title' => 'required|unique:posts|max:255',
+    'author.name' => 'required',
+    'author.description' => 'required',
+]);
+```
+On the other hand, if your field name contains a literal period, you can explicitly prevent this from being interpreted as "dot" syntax by escaping the period with a backslash:
+```
+$request->validate([
+    'title' => 'required|unique:posts|max:255',
+    'v1\.0' => 'required',
+]);
+```
+
+#### Displaying The Validation Errors
+So, what if the incoming request fields do not pass the given validation rules? As mentioned previously, Laravel will automatically redirect the user back to their previous location. In addition, all of the validation errors and request input will automatically be flashed to the session.
+
+An $errors variable is shared with all of your application's views by the Illuminate\View\Middleware\ShareErrorsFromSession middleware, which is provided by the web middleware group. When this middleware is applied an $errors variable will always be available in your views, allowing you to conveniently assume the $errors variable is always defined and can be safely used. The $errors variable will be an instance of Illuminate\Support\MessageBag. For more information on working with this object, check out its documentation.
+
+So, in our example, the user will be redirected to our controller's create method when validation fails, allowing us to display the error messages in the view:
+```
+<!-- /resources/views/post/create.blade.php -->
+ 
+<h1>Create Post</h1>
+ 
+@if ($errors->any())
+    <div class="alert alert-danger">
+        <ul>
+            @foreach ($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+@endif
+ 
+<!-- Create Post Form -->
+```
+
+#### The @error Directive
+You may use the @error Blade directive to quickly determine if validation error messages exist for a given attribute. Within an @error directive, you may echo the $message variable to display the error message:
+
+```
+<!-- /resources/views/post/create.blade.php -->
+ 
+<label for="title">Post Title</label>
+ 
+<input id="title"
+    type="text"
+    name="title"
+    class="@error('title') is-invalid @enderror">
+ 
+@error('title')
+    <div class="alert alert-danger">{{ $message }}</div>
+@enderror
+```
+OR
+```
+@error('name'){{$message}}@enderror
+```
+
+
+#### Repopulating Forms
+When Laravel generates a redirect response due to a validation error, the framework will automatically flash all of the request's input to the session. This is done so that you may conveniently access the input during the next request and repopulate the form that the user attempted to submit.
+
+To retrieve flashed input from the previous request, invoke the old method on an instance of Illuminate\Http\Request. The old method will pull the previously flashed input data from the session:
+
+$title = $request->old('title');
+Laravel also provides a global old helper. If you are displaying old input within a Blade template, it is more convenient to use the old helper to repopulate the form. If no old input exists for the given field, null will be returned:
+```
+<input type="text" name="title" value="{{ old('title') }}">
+ <input name="teams" id="teams" type="checkbox"  {{ old('teams') =='on' ? ' checked' : '' }}>
+
+```
+#### A Note On Optional Fields
+By default, Laravel includes the TrimStrings and ConvertEmptyStringsToNull middleware in your application's global middleware stack. These middleware are listed in the stack by the App\Http\Kernel class. Because of this, you will often need to mark your "optional" request fields as nullable if you do not want the validator to consider null values as invalid. For example:
+```
+$request->validate([
+    'title' => 'required|unique:posts|max:255',
+    'body' => 'required',
+    'publish_at' => 'nullable|date',
+]);
+```
+In this example, we are specifying that the publish_at field may be either null or a valid date representation. If the nullable modifier is not added to the rule definition, the validator would consider null an invalid date.
+
+### Customizing The Error Messages
+You may customize the error messages used by the form request by overriding the messages method. This method should return an array of attribute / rule pairs and their corresponding error messages:
+```
+$request->validate([
+    'title' => 'required|unique:posts|max:255',
+    'body' => 'required',
+    'publish_at' => 'nullable|date',
+],[
+     'title.max'=>"title should be less than 255 length .",
+     'body.required'=>"Body is required ."]);
+```
+
+
+####   Available Validation Rules
+
+##### accepted
+The field under validation must be "yes", "on", 1, or true. This is useful for validating "Terms of Service" acceptance or similar fields.
+
+##### accepted_if:anotherfield,value,...
+The field under validation must be "yes", "on", 1, or true if another field under validation is equal to a specified value. This is useful for validating "Terms of Service" acceptance or similar fields.
+
+##### after:date
+The field under validation must be a value after a given date. The dates will be passed into the strtotime PHP function in order to be converted to a valid DateTime instance:
+```
+'start_date' => 'required|date|after:tomorrow'
+```
+Instead of passing a date string to be evaluated by strtotime, you may specify another field to compare against the date:
+```
+'finish_date' => 'required|date|after:start_date'
+```
+
+##### alpha
+The field under validation must be entirely alphabetic characters.
+
+##### alpha_dash
+The field under validation may have alpha-numeric characters, as well as dashes and underscores.
+
+##### alpha_num
+The field under validation must be entirely alpha-numeric characters.
+
+##### array
+The field under validation must be a PHP array.
+
+#### bail
+Stop running validation rules for the field after the first validation failure.
+
+#### before:date
+The field under validation must be a value preceding the given date. The dates will be passed into the PHP strtotime function in order to be converted into a valid DateTime instance. In addition, like the after rule, the name of another field under validation may be supplied as the value of date.
+
+
+##### email
+The field under validation must be formatted as an email address. This validation rule utilizes the egulias/email-validator package for validating the email address. By default, the RFCValidation validator is applied, but you can apply other validation styles as well:
+```
+'email' => 'email:rfc,dns'
+```
+The example above will apply the RFCValidation and DNSCheckValidation validations. Here's a full list of validation styles you can apply:
+
+rfc: RFCValidation
+strict: NoRFCWarningsValidation
+dns: DNSCheckValidation
+spoof: SpoofCheckValidation
+filter: FilterEmailValidation
+
+
+##### ip
+The field under validation must be an IP address.
+
+##### ipv4
+The field under validation must be an IPv4 address.
+
+##### ipv6
+The field under validation must be an IPv6 address.
+
+##### Skipping Validation When Fields Have Certain Values
+You may occasionally wish to not validate a given field if another field has a given value. You may accomplish this using the exclude_if validation rule. In this example, the appointment_date and doctor_name fields will not be validated if the has_appointment field has a value of false:
+```
+use Illuminate\Support\Facades\Validator;
+ 
+$validator = Validator::make($data, [
+    'has_appointment' => 'required|boolean',
+    'appointment_date' => 'exclude_if:has_appointment,false|required|date',
+    'doctor_name' => 'exclude_if:has_appointment,false|required|string',
+]);
+```
+Alternatively, you may use the exclude_unless rule to not validate a given field unless another field has a given value:
+```
+$validator = Validator::make($data, [
+    'has_appointment' => 'required|boolean',
+    'appointment_date' => 'exclude_unless:has_appointment,true|required|date',
+    'doctor_name' => 'exclude_unless:has_appointment,true|required|string',
+]);
+```
+
+##### Validating Passwords
+To ensure that passwords have an adequate level of complexity, you may use Laravel's Password rule object:
+```
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rules\Password;
+ 
+$validator = Validator::make($request->all(), [
+    'password' => ['required', 'confirmed', Password::min(8)],
+]);
+```
+The Password rule object allows you to easily customize the password complexity requirements for your application, such as specifying that passwords require at least one letter, number, symbol, or characters with mixed casing:
+```
+// Require at least 8 characters...
+Password::min(8)
+ 
+// Require at least one letter...
+Password::min(8)->letters()
+ 
+// Require at least one uppercase and one lowercase letter...
+Password::min(8)->mixedCase()
+ 
+// Require at least one number...
+Password::min(8)->numbers()
+ 
+// Require at least one symbol...
+Password::min(8)->symbols()
+```
+
+Of course, you may chain all the methods in the examples above:
+```
+Password::min(8)
+    ->letters()
+    ->mixedCase()
+    ->numbers()
+    ->symbols()
+    ->uncompromised()
+```    
+
+### Error Handling
+
+#### Introduction
+When you start a new Laravel project, error and exception handling is already configured for you. The App\Exceptions\Handler class is where all exceptions thrown by your application are logged and then rendered to the user. We'll dive deeper into this class throughout this documentation.
+
+#### Configuration
+The debug option in your config/app.php configuration file determines how much information about an error is actually displayed to the user. By default, this option is set to respect the value of the APP_DEBUG environment variable, which is stored in your .env file.
+
+During local development, you should set the APP_DEBUG environment variable to true. In your production environment, this value should always be false. If the value is set to true in production, you risk exposing sensitive configuration values to your application's end users.
+### Logging
+
+#### Introduction
+To help you learn more about what's happening within your application, Laravel provides robust logging services that allow you to log messages to files, the system error log, and even to Slack to notify your entire team.
+
+Laravel logging is based on "channels". Each channel represents a specific way of writing log information. For example, the single channel writes log files to a single log file, while the slack channel sends log messages to Slack. Log messages may be written to multiple channels based on their severity.
+
+Under the hood, Laravel utilizes the Monolog library, which provides support for a variety of powerful log handlers. Laravel makes it a cinch to configure these handlers, allowing you to mix and match them to customize your application's log handling.
+
+#### Configuration
+All of the configuration options for your application's logging behavior is housed in the config/logging.php configuration file. This file allows you to configure your application's log channels, so be sure to review each of the available channels and their options. We'll review a few common options below.
+
+By default, Laravel will use the stack channel when logging messages. The stack channel is used to aggregate multiple log channels into a single channel.
+
+#### Writing Log Messages
+You may write information to the logs using the Log facade. As previously mentioned, the logger provides the eight logging levels defined in the RFC 5424 specification: emergency, alert, critical, error, warning, notice, info and debug:
+```
+use Illuminate\Support\Facades\Log;
+ 
+Log::emergency($message);
+Log::alert($message);
+Log::critical($message);
+Log::error($message);
+Log::warning($message);
+Log::notice($message);
+Log::info($message);
+Log::debug($message);
+```
+
+this  log will be avilable on log/laravel.log file .
+
+## Drigging Deeper
+
+### Artisan Console
+
+### Introduction
+Artisan is the command line interface included with Laravel. Artisan exists at the root of your application as the artisan script and provides a number of helpful commands that can assist you while you build your application. To view a list of all available Artisan commands, you may use the list command:
+```
+php artisan list
+```
+
+Every command also includes a "help" screen which displays and describes the command's available arguments and options. To view a help screen, precede the name of the command with help:
+```
+php artisan help migrate
+```
+
+### Tinker (REPL)
+Laravel Tinker is a powerful REPL for the Laravel framework, powered by the PsySH package.
+
+##### Installation
+All Laravel applications include Tinker by default. However, you may install Tinker using Composer if you have previously removed it from your application:
+```
+composer require laravel/tinker
+```
+#### Usage
+Tinker allows you to interact with your entire Laravel application on the command line, including your Eloquent models, jobs, events, and more. To enter the Tinker environment, run the tinker Artisan command:
+```
+php artisan tinker
+```
+
+You can publish Tinker's configuration file using the vendor:publish command:
+```
+php artisan vendor:publish --provider="Laravel\Tinker\TinkerServiceProvider"
+```
+
+The dispatch helper function and dispatch method on the Dispatchable class depends on garbage collection to place the job on the queue. Therefore, when using tinker, you should use Bus::dispatch or Queue::push to dispatch jobs.
+
+#### Command Allow List
+Tinker utilizes an "allow" list to determine which Artisan commands are allowed to be run within its shell. By default, you may run the clear-compiled, down, env, inspire, migrate, optimize, and up commands. If you would like to allow more commands you may add them to the commands array in your tinker.php configuration file:
+```
+'commands' => [
+    // App\Console\Commands\ExampleCommand::class,
+],
+```
+
+#### Classes That Should Not Be Aliased
+Typically, Tinker automatically aliases classes as you interact with them in Tinker. However, you may wish to never alias some classes. You may accomplish this by listing the classes in the dont_alias array of your tinker.php configuration file:
+```
+'dont_alias' => [
+    App\Models\User::class,
+],
+```
+
+#### Writing Commands
+In addition to the commands provided with Artisan, you may build your own custom commands. Commands are typically stored in the app/Console/Commands directory; however, you are free to choose your own storage location as long as your commands can be loaded by Composer.
+
+#### Generating Commands
+To create a new command, you may use the make:command Artisan command. This command will create a new command class in the app/Console/Commands directory. Don't worry if this directory does not exist in your application - it will be created the first time you run the make:command Artisan command:
+```
+php artisan make:command SendEmails
+```
+
+#### Command Structure
+After generating your command, you should define appropriate values for the signature and description properties of the class. These properties will be used when displaying your command on the list screen. The signature property also allows you to define your command's input expectations. The handle method will be called when your command is executed. You may place your command logic in this method.
