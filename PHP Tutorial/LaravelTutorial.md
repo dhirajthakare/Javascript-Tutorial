@@ -3424,3 +3424,2441 @@ php artisan make:command SendEmails
 
 #### Command Structure
 After generating your command, you should define appropriate values for the signature and description properties of the class. These properties will be used when displaying your command on the list screen. The signature property also allows you to define your command's input expectations. The handle method will be called when your command is executed. You may place your command logic in this method.
+
+
+## Events
+
+### Introduction
+Laravel's events provide a simple observer pattern implementation, allowing you to subscribe and listen for various events that occur within your application. Event classes are typically stored in the app/Events directory, while their listeners are stored in app/Listeners. Don't worry if you don't see these directories in your application as they will be created for you as you generate events and listeners using Artisan console commands.
+
+Events serve as a great way to decouple various aspects of your application, since a single event can have multiple listeners that do not depend on each other. For example, you may wish to send a Slack notification to your user each time an order has shipped. Instead of coupling your order processing code to your Slack notification code, you can raise an App\Events\OrderShipped event which a listener can receive and use to dispatch a Slack notification.
+
+### Registering Events & Listeners
+The App\Providers\EventServiceProvider included with your Laravel application provides a convenient place to register all of your application's event listeners. The listen property contains an array of all events (keys) and their listeners (values). You may add as many events to this array as your application requires. For example, let's add an OrderShipped event:
+```
+use App\Events\OrderShipped;
+use App\Listeners\SendShipmentNotification;
+ 
+/**
+ * The event listener mappings for the application.
+ *
+ * @var array
+ */
+protected $listen = [
+    OrderShipped::class => [
+        SendShipmentNotification::class,
+    ],
+];
+```
+
+### Generating Events & Listeners
+Of course, manually creating the files for each event and listener is cumbersome. Instead, add listeners and events to your EventServiceProvider and use the event:generate Artisan command. This command will generate any events or listeners that are listed in your EventServiceProvider that do not already exist:
+```
+php artisan event:generate
+```
+Alternatively, you may use the make:event and make:listener Artisan commands to generate individual events and listeners:
+```
+php artisan make:event PodcastProcessed
+ 
+php artisan make:listener SendPodcastNotification --event=PodcastProcessed
+```
+
+### Manually Registering Events
+Typically, events should be registered via the EventServiceProvider $listen array; however, you may also register class or closure based event listeners manually in the boot method of your EventServiceProvider:
+```
+use App\Events\PodcastProcessed;
+use App\Listeners\SendPodcastNotification;
+use Illuminate\Support\Facades\Event;
+ 
+/**
+ * Register any other events for your application.
+ *
+ * @return void
+ */
+public function boot()
+{
+    Event::listen(
+        PodcastProcessed::class,
+        [SendPodcastNotification::class, 'handle']
+    );
+ 
+    Event::listen(function (PodcastProcessed $event) {
+        //
+    });
+}
+```
+
+### Queueable Anonymous Event Listeners
+When registering closure based event listeners manually, you may wrap the listener closure within the Illuminate\Events\queueable function to instruct Laravel to execute the listener using the queue:
+```
+use App\Events\PodcastProcessed;
+use function Illuminate\Events\queueable;
+use Illuminate\Support\Facades\Event;
+ 
+/**
+ * Register any other events for your application.
+ *
+ * @return void
+ */
+public function boot()
+{
+    Event::listen(queueable(function (PodcastProcessed $event) {
+        //
+    }));
+}
+```
+
+Like queued jobs, you may use the onConnection, onQueue, and delay methods to customize the execution of the queued listener:
+```
+Event::listen(queueable(function (PodcastProcessed $event) {
+    //
+})
+```
+
+
+If you would like to handle anonymous queued listener failures, you may provide a closure to the catch method while defining the queueable listener. This closure will receive the event instance and the Throwable instance that caused the listener's failure:
+```
+use App\Events\PodcastProcessed;
+use function Illuminate\Events\queueable;
+use Illuminate\Support\Facades\Event;
+use Throwable;
+ 
+Event::listen(queueable(function (PodcastProcessed $event) {
+    //
+})->catch(function (PodcastProcessed $event, Throwable $e) {
+    // The queued listener failed...
+}));
+
+```
+
+#### Wildcard Event Listeners
+You may even register listeners using the * as a wildcard parameter, allowing you to catch multiple events on the same listener. Wildcard listeners receive the event name as their first argument and the entire event data array as their second argument:
+```
+Event::listen('event.*', function ($eventName, array $data) {
+    //
+});
+```
+#### Event Discovery
+Instead of registering events and listeners manually in the $listen array of the EventServiceProvider, you can enable automatic event discovery. When event discovery is enabled, Laravel will automatically find and register your events and listeners by scanning your application's Listeners directory. In addition, any explicitly defined events listed in the EventServiceProvider will still be registered.
+
+Laravel finds event listeners by scanning the listener classes using PHP's reflection services. When Laravel finds any listener class method that begins with handle or __invoke, Laravel will register those methods as event listeners for the event that is type-hinted in the method's signature:
+```
+use App\Events\PodcastProcessed;
+ 
+class SendPodcastNotification
+{
+    /**
+     * Handle the given event.
+     *
+     * @param  \App\Events\PodcastProcessed  $event
+     * @return void
+     */
+    public function handle(PodcastProcessed $event)
+    {
+        //
+    }
+}
+```
+
+Event discovery is disabled by default, but you can enable it by overriding the shouldDiscoverEvents method of your application's EventServiceProvider:
+```
+/**
+ * Determine if events and listeners should be automatically discovered.
+ *
+ * @return bool
+ */
+public function shouldDiscoverEvents()
+{
+    return true;
+}
+```
+By default, all listeners within your application's app/Listeners directory will be scanned. If you would like to define additional directories to scan, you may override the discoverEventsWithin method in your EventServiceProvider:
+```
+/**
+ * Get the listener directories that should be used to discover events.
+ *
+ * @return array
+ */
+protected function discoverEventsWithin()
+{
+    return [
+        $this->app->path('Listeners'),
+    ];
+}
+```
+
+### Event Discovery In Production
+In production, it is not efficient for the framework to scan all of your listeners on every request. Therefore, during your deployment process, you should run the event:cache Artisan command to cache a manifest of all of your application's events and listeners. This manifest will be used by the framework to speed up the event registration process. The event:clear command may be used to destroy the cache.
+
+### Defining Events
+An event class is essentially a data container which holds the information related to the event. For example, let's assume an App\Events\OrderShipped event receives an Eloquent ORM object:
+```
+<?php
+ 
+namespace App\Events;
+ 
+use App\Models\Order;
+use Illuminate\Broadcasting\InteractsWithSockets;
+use Illuminate\Foundation\Events\Dispatchable;
+use Illuminate\Queue\SerializesModels;
+ 
+class OrderShipped
+{
+    use Dispatchable, InteractsWithSockets, SerializesModels;
+ 
+    /**
+     * The order instance.
+     *
+     * @var \App\Models\Order
+     */
+    public $order;
+ 
+    /**
+     * Create a new event instance.
+     *
+     * @param  \App\Models\Order  $order
+     * @return void
+     */
+    public function __construct(Order $order)
+    {
+        $this->order = $order;
+    }
+}
+```
+
+#### Defining Listeners
+Next, let's take a look at the listener for our example event. Event listeners receive event instances in their handle method. The event:generate and make:listener Artisan commands will automatically import the proper event class and type-hint the event on the handle method. Within the handle method, you may perform any actions necessary to respond to the event:
+```
+<?php
+ 
+namespace App\Listeners;
+ 
+use App\Events\OrderShipped;
+ 
+class SendShipmentNotification
+{
+    /**
+     * Create the event listener.
+     *
+     * @return void
+     */
+    public function __construct()
+    {
+        //
+    }
+ 
+    /**
+     * Handle the event.
+     *
+     * @param  \App\Events\OrderShipped  $event
+     * @return void
+     */
+    public function handle(OrderShipped $event)
+    {
+        // Access the order using $event->order...
+    }
+}
+```
+Your event listeners may also type-hint any dependencies they need on their constructors. All event listeners are resolved via the Laravel service container, so dependencies will be injected automatically.
+
+#### Stopping The Propagation Of An Event
+Sometimes, you may wish to stop the propagation of an event to other listeners. You may do so by returning false from your listener's handle method.
+
+#### Queued Event Listeners
+Queueing listeners can be beneficial if your listener is going to perform a slow task such as sending an email or making an HTTP request. Before using queued listeners, make sure to configure your queue and start a queue worker on your server or local development environment.
+
+To specify that a listener should be queued, add the ShouldQueue interface to the listener class. Listeners generated by the event:generate and make:listener Artisan commands already have this interface imported into the current namespace so you can use it immediately:
+```
+<?php
+ 
+namespace App\Listeners;
+ 
+use App\Events\OrderShipped;
+use Illuminate\Contracts\Queue\ShouldQueue;
+ 
+class SendShipmentNotification implements ShouldQueue
+{
+    //
+}
+```
+That's it! Now, when an event handled by this listener is dispatched, the listener will automatically be queued by the event dispatcher using Laravel's queue system. If no exceptions are thrown when the listener is executed by the queue, the queued job will automatically be deleted after it has finished processing.
+
+#### Customizing The Queue Connection & Queue Name
+If you would like to customize the queue connection, queue name, or queue delay time of an event listener, you may define the $connection, $queue, or $delay properties on your listener class:
+```
+<?php
+ 
+namespace App\Listeners;
+ 
+use App\Events\OrderShipped;
+use Illuminate\Contracts\Queue\ShouldQueue;
+ 
+class SendShipmentNotification implements ShouldQueue
+{
+    /**
+     * The name of the connection the job should be sent to.
+     *
+     * @var string|null
+     */
+    public $connection = 'sqs';
+ 
+    /**
+     * The name of the queue the job should be sent to.
+     *
+     * @var string|null
+     */
+    public $queue = 'listeners';
+ 
+    /**
+     * The time (seconds) before the job should be processed.
+     *
+     * @var int
+     */
+    public $delay = 60;
+}
+```
+
+If you would like to define the listener's queue connection or queue name at runtime, you may define viaConnection or viaQueue methods on the listener:
+```
+/**
+ * Get the name of the listener's queue connection.
+ *
+ * @return string
+ */
+public function viaConnection()
+{
+    return 'sqs';
+}
+ 
+/**
+ * Get the name of the listener's queue.
+ *
+ * @return string
+ */
+public function viaQueue()
+{
+    return 'listeners';
+}
+
+```
+
+#### Queued Event Listeners & Database Transactions
+When queued listeners are dispatched within database transactions, they may be processed by the queue before the database transaction has committed. When this happens, any updates you have made to models or database records during the database transaction may not yet be reflected in the database. In addition, any models or database records created within the transaction may not exist in the database. If your listener depends on these models, unexpected errors can occur when the job that dispatches the queued listener is processed.
+
+If your queue connection's after_commit configuration option is set to false, you may still indicate that a particular queued listener should be dispatched after all open database transactions have been committed by defining an $afterCommit property on the listener class:
+```
+<?php
+ 
+namespace App\Listeners;
+ 
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Queue\InteractsWithQueue;
+ 
+class SendShipmentNotification implements ShouldQueue
+{
+    use InteractsWithQueue;
+ 
+    public $afterCommit = true;
+}
+```
+
+#### Dispatching Events
+To dispatch an event, you may call the static dispatch method on the event. This method is made available on the event by the Illuminate\Foundation\Events\Dispatchable trait. Any arguments passed to the dispatch method will be passed to the event's constructor:
+```
+<?php
+ 
+namespace App\Http\Controllers;
+ 
+use App\Events\OrderShipped;
+use App\Http\Controllers\Controller;
+use App\Models\Order;
+use Illuminate\Http\Request;
+ 
+class OrderShipmentController extends Controller
+{
+    /**
+     * Ship the given order.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function store(Request $request)
+    {
+        $order = Order::findOrFail($request->order_id);
+ 
+        // Order shipment logic...
+ 
+        OrderShipped::dispatch($order);
+    }
+}
+```
+
+
+## Broadcasting
+In many modern web applications, WebSockets are used to implement realtime, live-updating user interfaces. When some data is updated on the server, a message is typically sent over a WebSocket connection to be handled by the client. WebSockets provide a more efficient alternative to continually polling your application's server for data changes that should be reflected in your UI.
+
+The core concepts behind broadcasting are simple: clients connect to named channels on the frontend, while your Laravel application broadcasts events to these channels on the backend. These events can contain any additional data you wish to make available to the frontend.
+
+#### Supported Drivers
+By default, Laravel includes two server-side broadcasting drivers for you to choose from: Pusher Channels and Ably. However, community driven packages such as laravel-websockets and soketi provide additional broadcasting drivers that do not require commercial broadcasting providers.
+
+### Server Side Installation
+To get started using Laravel's event broadcasting, we need to do some configuration within the Laravel application as well as install a few packages.
+
+Event broadcasting is accomplished by a server-side broadcasting driver that broadcasts your Laravel events so that Laravel Echo (a JavaScript library) can receive them within the browser client. Don't worry - we'll walk through each part of the installation process step-by-step.
+
+#### Configuration
+All of your application's event broadcasting configuration is stored in the config/broadcasting.php configuration file. Laravel supports several broadcast drivers out of the box: Pusher Channels, Redis, and a log driver for local development and debugging. Additionally, a null driver is included which allows you to totally disable broadcasting during testing. A configuration example is included for each of these drivers in the config/broadcasting.php configuration file.
+
+#### Broadcast Service Provider
+Before broadcasting any events, you will first need to register the App\Providers\BroadcastServiceProvider. In new Laravel applications, you only need to uncomment this provider in the providers array of your config/app.php configuration file. This BroadcastServiceProvider contains the code necessary to register the broadcast authorization routes and callbacks.
+
+#### Queue Configuration
+You will also need to configure and run a queue worker. All event broadcasting is done via queued jobs so that the response time of your application is not seriously affected by events being broadcast.
+
+#### Pusher Channels
+If you plan to broadcast your events using Pusher Channels, you should install the Pusher Channels PHP SDK using the Composer package manager:
+```
+composer require pusher/pusher-php-server
+```
+Next, you should configure your Pusher Channels credentials in the config/broadcasting.php configuration file. An example Pusher Channels configuration is already included in this file, allowing you to quickly specify your key, secret, and application ID. Typically, these values should be set via the PUSHER_APP_KEY, PUSHER_APP_SECRET, and PUSHER_APP_ID environment variables:
+```
+PUSHER_APP_ID=your-pusher-app-id
+PUSHER_APP_KEY=your-pusher-key
+PUSHER_APP_SECRET=your-pusher-secret
+PUSHER_APP_CLUSTER=mt1
+```
+The config/broadcasting.php file's pusher configuration also allows you to specify additional options that are supported by Channels, such as the cluster.
+
+Next, you will need to change your broadcast driver to pusher in your .env file:
+```
+BROADCAST_DRIVER=pusher
+```
+Finally, you are ready to install and configure Laravel Echo, which will receive the broadcast events on the client-side.
+
+### Open Source Alternatives
+#### PHP
+The laravel-websockets package is a pure PHP, Pusher compatible WebSocket package for Laravel. This package allows you to leverage the full power of Laravel broadcasting without a commercial WebSocket provider. For more information on installing and using this package, please consult its official documentation.
+
+#### Node
+Soketi is a Node based, Pusher compatible WebSocket server for Laravel. Under the hood, Soketi utilizes µWebSockets.js for extreme scalability and speed. This package allows you to leverage the full power of Laravel broadcasting without a commercial WebSocket provider. For more information on installing and using this package, please consult its official documentation.
+
+### Client Side Installation
+#### Pusher Channels
+Laravel Echo is a JavaScript library that makes it painless to subscribe to channels and listen for events broadcast by your server-side broadcasting driver. You may install Echo via the NPM package manager. In this example, we will also install the pusher-js package since we will be using the Pusher Channels broadcaster:
+```
+npm install --save-dev laravel-echo pusher-js
+```
+Once Echo is installed, you are ready to create a fresh Echo instance in your application's JavaScript. A great place to do this is at the bottom of the resources/js/bootstrap.js file that is included with the Laravel framework. By default, an example Echo configuration is already included in this file - you simply need to uncomment it:
+```
+import Echo from 'laravel-echo';
+ 
+window.Pusher = require('pusher-js');
+ 
+window.Echo = new Echo({
+    broadcaster: 'pusher',
+    key: process.env.MIX_PUSHER_APP_KEY,
+    cluster: process.env.MIX_PUSHER_APP_CLUSTER,
+    forceTLS: true
+});
+```
+Once you have uncommented and adjusted the Echo configuration according to your needs, you may compile your application's assets:
+```
+npm run dev
+```
+### Cache
+
+#### Introduction
+Some of the data retrieval or processing tasks performed by your application could be CPU intensive or take several seconds to complete. When this is the case, it is common to cache the retrieved data for a time so it can be retrieved quickly on subsequent requests for the same data. The cached data is usually stored in a very fast data store such as Memcached or Redis.
+
+Thankfully, Laravel provides an expressive, unified API for various cache backends, allowing you to take advantage of their blazing fast data retrieval and speed up your web application.
+
+### Configuration
+Your application's cache configuration file is located at config/cache.php. In this file, you may specify which cache driver you would like to be used by default throughout your application. Laravel supports popular caching backends like Memcached, Redis, DynamoDB, and relational databases out of the box. In addition, a file based cache driver is available, while array and "null" cache drivers provide convenient cache backends for your automated tests.
+
+The cache configuration file also contains various other options, which are documented within the file, so make sure to read over these options. By default, Laravel is configured to use the file cache driver, which stores the serialized, cached objects on the server's filesystem. For larger applications, it is recommended that you use a more robust driver such as Memcached or Redis. You may even configure multiple cache configurations for the same driver.
+
+#### Driver Prerequisites
+##### Database
+When using the database cache driver, you will need to setup a table to contain the cache items. You'll find an example Schema declaration for the table below:
+```
+Schema::create('cache', function ($table) {
+    $table->string('key')->unique();
+    $table->text('value');
+    $table->integer('expiration');
+});
+
+```
+
+You may also use the ```php artisan cache:table ```Artisan command to generate a migration with the proper schema.
+
+#### Memcached
+Using the Memcached driver requires the Memcached PECL package to be installed. You may list all of your Memcached servers in the config/cache.php configuration file. This file already contains a memcached.servers entry to get you started:
+```
+'memcached' => [
+    'servers' => [
+        [
+            'host' => env('MEMCACHED_HOST', '127.0.0.1'),
+            'port' => env('MEMCACHED_PORT', 11211),
+            'weight' => 100,
+        ],
+    ],
+],
+
+```
+If needed, you may set the host option to a UNIX socket path. If you do this, the port option should be set to 0:
+```
+'memcached' => [
+    [
+        'host' => '/var/run/memcached/memcached.sock',
+        'port' => 0,
+        'weight' => 100
+    ],
+],
+```
+
+####  Cache Usage
+Obtaining A Cache Instance
+To obtain a cache store instance, you may use the Cache facade, which is what we will use throughout this documentation. The Cache facade provides convenient, terse access to the underlying implementations of the Laravel cache contracts:
+```
+<?php
+ 
+namespace App\Http\Controllers;
+ 
+use Illuminate\Support\Facades\Cache;
+ 
+class UserController extends Controller
+{
+    /**
+     * Show a list of all users of the application.
+     *
+     * @return Response
+     */
+    public function index()
+    {
+        $value = Cache::get('key');
+ 
+        //
+    }
+}
+```
+
+### Storing Items In The Cache
+You may use the put method on the Cache facade to store items in the cache:
+```
+Cache::put('key', 'value', $seconds = 10);
+```
+If the storage time is not passed to the put method, the item will be stored indefinitely:
+```
+Cache::put('key', 'value');
+```
+Instead of passing the number of seconds as an integer, you may also pass a DateTime instance representing the desired expiration time of the cached item:
+```
+Cache::put('key', 'value', now()->addMinutes(10));
+```
+#### Store If Not Present
+The add method will only add the item to the cache if it does not already exist in the cache store. The method will return true if the item is actually added to the cache. Otherwise, the method will return false. The add method is an atomic operation:
+```
+Cache::add('key', 'value', $seconds);
+```
+##### Storing Items Forever
+The forever method may be used to store an item in the cache permanently. Since these items will not expire, they must be manually removed from the cache using the forget method:
+```
+Cache::forever('key', 'value');
+```
+
+Note :- If you are using the Memcached driver, items that are stored "forever" may be removed when the cache reaches its size limit.
+
+### Retrieving Items From The Cache
+The Cache facade's get method is used to retrieve items from the cache. If the item does not exist in the cache, null will be returned. If you wish, you may pass a second argument to the get method specifying the default value you wish to be returned if the item doesn't exist:
+```
+$value = Cache::get('key');
+ 
+$value = Cache::get('key', 'default');
+```
+
+You may even pass a closure as the default value. The result of the closure will be returned if the specified item does not exist in the cache. Passing a closure allows you to defer the retrieval of default values from a database or other external service:
+```
+$value = Cache::get('key', function () {
+    return DB::table(...)->get();
+});
+```
+
+### Checking For Item Existence
+The has method may be used to determine if an item exists in the cache. This method will also return false if the item exists but its value is null:
+```
+if (Cache::has('key')) {
+    //
+}
+```
+
+#### Incrementing / Decrementing Values
+The increment and decrement methods may be used to adjust the value of integer items in the cache. Both of these methods accept an optional second argument indicating the amount by which to increment or decrement the item's value:
+```
+Cache::increment('key');
+Cache::increment('key', $amount);
+Cache::decrement('key');
+Cache::decrement('key', $amount);
+```
+
+#### Retrieve & Store
+Sometimes you may wish to retrieve an item from the cache, but also store a default value if the requested item doesn't exist. For example, you may wish to retrieve all users from the cache or, if they don't exist, retrieve them from the database and add them to the cache. You may do this using the Cache::remember method:
+```
+$value = Cache::remember('users', $seconds, function () {
+    return DB::table('users')->get();
+});
+```
+If the item does not exist in the cache, the closure passed to the remember method will be executed and its result will be placed in the cache.
+
+You may use the rememberForever method to retrieve an item from the cache or store it forever if it does not exist:
+```
+$value = Cache::rememberForever('users', function () {
+    return DB::table('users')->get();
+});
+```
+
+### Retrieve & Delete
+If you need to retrieve an item from the cache and then delete the item, you may use the pull method. Like the get method, null will be returned if the item does not exist in the cache:
+```
+$value = Cache::pull('key');
+```
+
+### Removing Items From The Cache
+You may remove items from the cache using the forget method:
+```
+Cache::forget('key');
+```
+You may also remove items by providing a zero or negative number of expiration seconds:
+```
+Cache::put('key', 'value', 0);
+ 
+Cache::put('key', 'value', -5);
+```
+You may clear the entire cache using the flush method:
+```
+Cache::flush();
+```
+
+Flushing the cache does not respect your configured cache "prefix" and will remove all entries from the cache. Consider this carefully when clearing a cache which is shared by other applications.
+
+#### The Cache Helper
+In addition to using the Cache facade, you may also use the global cache function to retrieve and store data via the cache. When the cache function is called with a single, string argument, it will return the value of the given key:
+```
+$value = cache('key');
+```
+If you provide an array of key / value pairs and an expiration time to the function, it will store values in the cache for the specified duration:
+```
+cache(['key' => 'value'], $seconds);
+ 
+cache(['key' => 'value'], now()->addMinutes(10));
+```
+When the cache function is called without any arguments, it returns an instance of the Illuminate\Contracts\Cache\Factory implementation, allowing you to call other caching methods:
+```
+cache()->remember('users', $seconds, function () {
+    return DB::table('users')->get();
+});
+```
+### Cache Tags
+Cache tags are not supported when using the file, dynamodb, or database cache drivers. Furthermore, when using multiple tags with caches that are stored "forever", performance will be best with a driver such as memcached, which automatically purges stale records.
+
+#### Storing Tagged Cache Items
+Cache tags allow you to tag related items in the cache and then flush all cached values that have been assigned a given tag. You may access a tagged cache by passing in an ordered array of tag names. For example, let's access a tagged cache and put a value into the cache:
+```
+Cache::tags(['people', 'artists'])->put('John', $john, $seconds);
+Cache::tags(['people', 'authors'])->put('Anne', $anne, $seconds);
+ ```
+
+#### Accessing Tagged Cache Items
+To retrieve a tagged cache item, pass the same ordered list of tags to the tags method and then call the get method with the key you wish to retrieve:
+```
+$john = Cache::tags(['people', 'artists'])->get('John');
+$anne = Cache::tags(['people', 'authors'])->get('Anne');
+```
+#### Removing Tagged Cache Items
+You may flush all items that are assigned a tag or list of tags. For example, this statement would remove all caches tagged with either people, authors, or both. So, both Anne and John would be removed from the cache:
+```
+Cache::tags(['people', 'authors'])->flush();
+```
+In contrast, this statement would remove only cached values tagged with authors, so Anne would be removed, but not John:
+```
+Cache::tags('authors')->flush();
+```
+
+#### Atomic Locks
+
+To utilize this feature, your application must be using the memcached, redis, dynamodb, database, file, or array cache driver as your application's default cache driver. In addition, all servers must be communicating with the same central cache server.
+
+### Collections
+
+The Illuminate\Support\Collection class provides a fluent, convenient wrapper for working with arrays of data. For example, check out the following code. We'll use the collect helper to create a new collection instance from the array, run the strtoupper function on each element, and then remove all empty elements:
+```
+$collection = collect(['taylor', 'abigail', null])->map(function ($name) {
+    return strtoupper($name);
+})->reject(function ($name) {
+    return empty($name);
+});
+```
+As you can see, the Collection class allows you to chain its methods to perform fluent mapping and reducing of the underlying array. In general, collections are immutable, meaning every Collection method returns an entirely new Collection instance.
+
+### Creating Collections
+As mentioned above, the collect helper returns a new Illuminate\Support\Collection instance for the given array. So, creating a collection is as simple as:
+```
+$collection = collect([1, 2, 3]);
+```
+
+The results of Eloquent queries are always returned as Collection instances.
+
+### Extending Collections
+Collections are "macroable", which allows you to add additional methods to the Collection class at run time. The Illuminate\Support\Collection class' macro method accepts a closure that will be executed when your macro is called. The macro closure may access the collection's other methods via $this, just as if it were a real method of the collection class. For example, the following code adds a toUpper method to the Collection class:
+```
+use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
+ 
+Collection::macro('toUpper', function () {
+    return $this->map(function ($value) {
+        return Str::upper($value);
+    });
+});
+ 
+$collection = collect(['first', 'second']);
+ 
+$upper = $collection->toUpper();
+ 
+// ['FIRST', 'SECOND']
+```
+Typically, you should declare collection macros in the boot method of a service provider.
+
+### Macro Arguments
+If necessary, you may define macros that accept additional arguments:
+```
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Lang;
+ 
+Collection::macro('toLocale', function ($locale) {
+    return $this->map(function ($value) use ($locale) {
+        return Lang::get($value, [], $locale);
+    });
+});
+ 
+$collection = collect(['first', 'second']);
+ 
+$translated = $collection->toLocale('es');
+```
+
+### Method Listing
+
+#### all()
+The all method returns the underlying array represented by the collection:
+```
+collect([1, 2, 3])->all();
+ 
+// [1, 2, 3]
+```
+
+#### average()
+Alias for the avg method.
+
+#### avg()
+The avg method returns the average value of a given key:
+```
+$average = collect([
+    ['foo' => 10],
+    ['foo' => 10],
+    ['foo' => 20],
+    ['foo' => 40]
+])->avg('foo');
+ 
+// 20
+ 
+$average = collect([1, 1, 2, 4])->avg();
+ 
+// 2
+```
+
+#### chunk()
+The chunk method breaks the collection into multiple, smaller collections of a given size:
+```
+$collection = collect([1, 2, 3, 4, 5, 6, 7]);
+ 
+$chunks = $collection->chunk(4);
+ 
+$chunks->all();
+ 
+// [[1, 2, 3, 4], [5, 6, 7]]
+```
+
+This method is especially useful in views when working with a grid system such as Bootstrap. For example, imagine you have a collection of Eloquent models you want to display in a grid:
+```
+@foreach ($products->chunk(3) as $chunk)
+    <div class="row">
+        @foreach ($chunk as $product)
+            <div class="col-xs-4">{{ $product->name }}</div>
+        @endforeach
+    </div>
+@endforeach
+
+```
+
+#### chunkWhile()
+The chunkWhile method breaks the collection into multiple, smaller collections based on the evaluation of the given callback. The $chunk variable passed to the closure may be used to inspect the previous element:
+```
+$collection = collect(str_split('AABBCCCD'));
+ 
+$chunks = $collection->chunkWhile(function ($value, $key, $chunk) {
+    return $value === $chunk->last();
+});
+ 
+$chunks->all();
+ 
+// [['A', 'A'], ['B', 'B'], ['C', 'C', 'C'], ['D']]
+```
+
+#### collapse()
+The collapse method collapses a collection of arrays into a single, flat collection:
+```
+$collection = collect([
+    [1, 2, 3],
+    [4, 5, 6],
+    [7, 8, 9],
+]);
+ 
+$collapsed = $collection->collapse();
+ 
+$collapsed->all();
+ 
+// [1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+```
+
+#### collect()
+The collect method returns a new Collection instance with the items currently in the collection:
+```
+$collectionA = collect([1, 2, 3]);
+ 
+$collectionB = $collectionA->collect();
+ 
+$collectionB->all();
+ 
+// [1, 2, 3]
+```
+
+#### collect()
+The collect method returns a new Collection instance with the items currently in the collection:
+```
+$collectionA = collect([1, 2, 3]);
+ 
+$collectionB = $collectionA->collect();
+ 
+$collectionB->all();
+ 
+// [1, 2, 3]
+```
+The collect method is primarily useful for converting lazy collections into standard Collection instances:
+```
+$lazyCollection = LazyCollection::make(function () {
+    yield 1;
+    yield 2;
+    yield 3;
+});
+ 
+$collection = $lazyCollection->collect();
+ 
+get_class($collection);
+ 
+// 'Illuminate\Support\Collection'
+ 
+$collection->all();
+ 
+// [1, 2, 3]
+```
+
+The collect method is especially useful when you have an instance of Enumerable and need a non-lazy collection instance. Since collect() is part of the Enumerable contract, you can safely use it to get a Collection instance.
+
+#### combine()
+The combine method combines the values of the collection, as keys, with the values of another array or collection:
+```
+$collection = collect(['name', 'age']);
+ 
+$combined = $collection->combine(['George', 29]);
+ 
+$combined->all();
+ 
+// ['name' => 'George', 'age' => 29]
+```
+
+#### concat()
+The concat method appends the given array or collection's values onto the end of another collection:
+```
+$collection = collect(['John Doe']);
+ 
+$concatenated = $collection->concat(['Jane Doe'])->concat(['name' => 'Johnny Doe']);
+ 
+$concatenated->all();
+ 
+// ['John Doe', 'Jane Doe', 'Johnny Doe']
+```
+
+The concat method numerically reindexes keys for items concatenated onto the original collection. To maintain keys in associative collections, see the merge method.
+
+#### contains()
+The contains method determines whether the collection contains a given item. You may pass a closure to the contains method to determine if an element exists in the collection matching a given truth test:
+```
+$collection = collect([1, 2, 3, 4, 5]);
+ 
+$collection->contains(function ($value, $key) {
+    return $value > 5;
+});
+ 
+// false
+```
+
+Alternatively, you may pass a string to the contains method to determine whether the collection contains a given item value:
+
+Alternatively, you may pass a string to the contains method to determine whether the collection contains a given item value:
+```
+$collection = collect(['name' => 'Desk', 'price' => 100]);
+ 
+$collection->contains('Desk');
+ 
+// true
+ 
+$collection->contains('New York');
+ 
+// false
+```
+
+You may also pass a key / value pair to the contains method, which will determine if the given pair exists in the collection:
+```
+$collection = collect([
+    ['product' => 'Desk', 'price' => 200],
+    ['product' => 'Chair', 'price' => 100],
+]);
+ 
+$collection->contains('product', 'Bookcase');
+ 
+// false
+```
+
+The contains method uses "loose" comparisons when checking item values, meaning a string with an integer value will be considered equal to an integer of the same value. Use the containsStrict method to filter using "strict" comparisons.
+
+For the inverse of contains, see the doesntContain method.
+
+
+#### containsStrict()
+This method has the same signature as the contains method; however, all values are compared using "strict" comparisons.
+
+#### count()
+The count method returns the total number of items in the collection:
+```
+$collection = collect([1, 2, 3, 4]);
+ 
+$collection->count();
+ 
+// 4
+```
+
+#### countBy()
+The countBy method counts the occurrences of values in the collection. By default, the method counts the occurrences of every element, allowing you to count certain "types" of elements in the collection:
+```
+$collection = collect([1, 2, 2, 2, 3]);
+ 
+$counted = $collection->countBy();
+ 
+$counted->all();
+ 
+// [1 => 1, 2 => 3, 3 => 1]
+```
+
+You pass a closure to the countBy method to count all items by a custom value:
+```
+$collection = collect(['alice@gmail.com', 'bob@yahoo.com', 'carlos@gmail.com']);
+ 
+$counted = $collection->countBy(function ($email) {
+    return substr(strrchr($email, "@"), 1);
+});
+ 
+$counted->all();
+ 
+// ['gmail.com' => 2, 'yahoo.com' => 1]
+```
+
+if you want see more collection then you can visit this link  https://laravel.com/docs/9.x/collections 
+
+### Compiling Assets (Mix)
+
+#### Introduction
+Laravel Mix, a package developed by Laracasts creator Jeffrey Way, provides a fluent API for defining webpack build steps for your Laravel application using several common CSS and JavaScript pre-processors.
+
+In other words, Mix makes it a cinch to compile and minify your application's CSS and JavaScript files. Through simple method chaining, you can fluently define your asset pipeline. For example:
+
+mix.js('resources/js/app.js', 'public/js')
+    .postCss('resources/css/app.css', 'public/css');
+If you've ever been confused and overwhelmed about getting started with webpack and asset compilation, you will love Laravel Mix. However, you are not required to use it while developing your application; you are free to use any asset pipeline tool you wish, or even none at all.
+
+### File Storage
+
+#### Introduction
+Laravel provides a powerful filesystem abstraction thanks to the wonderful Flysystem PHP package by Frank de Jonge. The Laravel Flysystem integration provides simple drivers for working with local filesystems, SFTP, and Amazon S3. Even better, it's amazingly simple to switch between these storage options between your local development machine and production server as the API remains the same for each system.
+
+
+#### Configuration
+Laravel's filesystem configuration file is located at config/filesystems.php. Within this file, you may configure all of your filesystem "disks". Each disk represents a particular storage driver and storage location. Example configurations for each supported driver are included in the configuration file so you can modify the configuration to reflect your storage preferences and credentials.
+
+The local driver interacts with files stored locally on the server running the Laravel application while the s3 driver is used to write to Amazon's S3 cloud storage service.
+
+#### The Local Driver
+When using the local driver, all file operations are relative to the root directory defined in your filesystems configuration file. By default, this value is set to the storage/app directory. Therefore, the following method would write to storage/app/example.txt:
+```
+use Illuminate\Support\Facades\Storage;
+ 
+Storage::disk('local')->put('example.txt', 'Contents');
+```
+Retrieving Files
+The get method may be used to retrieve the contents of a file. The raw string contents of the file will be returned by the method. Remember, all file paths should be specified relative to the disk's "root" location:
+
+$contents = Storage::get('file.jpg');
+The exists method may be used to determine if a file exists on the disk:
+
+if (Storage::disk('s3')->exists('file.jpg')) {
+    // ...
+}
+The missing method may be used to determine if a file is missing from the disk:
+
+if (Storage::disk('s3')->missing('file.jpg')) {
+    // ...
+}Retrieving Files
+The get method may be used to retrieve the contents of a file. The raw string contents of the file will be returned by the method. Remember, all file paths should be specified relative to the disk's "root" location:
+
+$contents = Storage::get('file.jpg');
+The exists method may be used to determine if a file exists on the disk:
+
+if (Storage::disk('s3')->exists('file.jpg')) {
+    // ...
+}
+The missing method may be used to determine if a file is missing from the disk:
+
+if (Storage::disk('s3')->missing('file.jpg')) {
+    // ...
+}
+#### Retrieving Files
+The get method may be used to retrieve the contents of a file. The raw string contents of the file will be returned by the method. Remember, all file paths should be specified relative to the disk's "root" location:
+```
+$contents = Storage::get('file.jpg');
+```
+The exists method may be used to determine if a file exists on the disk:
+```
+if (Storage::disk('s3')->exists('file.jpg')) {
+    // ...
+}
+```
+The missing method may be used to determine if a file is missing from the disk:
+```
+if (Storage::disk('s3')->missing('file.jpg')) {
+    // ...
+}
+```
+
+#### Downloading Files
+The download method may be used to generate a response that forces the user's browser to download the file at the given path. The download method accepts a filename as the second argument to the method, which will determine the filename that is seen by the user downloading the file. Finally, you may pass an array of HTTP headers as the third argument to the method:
+```
+return Storage::download('file.jpg');
+ 
+return Storage::download('file.jpg', $name, $headers);
+```
+
+#### Helpers
+
+#### Introduction
+Laravel includes a variety of global "helper" PHP functions. Many of these functions are used by the framework itself; however, you are free to use them in your own applications if you find them convenient.
+
+### Available Methods
+
+lost of method are available https://laravel.com/docs/9.x/helpers
+
+###Arr::collapse()
+The Arr::collapse method collapses an array of arrays into a single array:
+```
+use Illuminate\Support\Arr;
+ 
+$array = Arr::collapse([[1, 2, 3], [4, 5, 6], [7, 8, 9]]);
+ 
+// [1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+```
+
+### HTTP Client
+#### Introduction
+Laravel provides an expressive, minimal API around the Guzzle HTTP client, allowing you to quickly make outgoing HTTP requests to communicate with other web applications. Laravel's wrapper around Guzzle is focused on its most common use cases and a wonderful developer experience.
+
+Before getting started, you should ensure that you have installed the Guzzle package as a dependency of your application. By default, Laravel automatically includes this dependency. However, if you have previously removed the package, you may install it again via Composer:
+```
+composer require guzzlehttp/guzzle
+```
+#### Making Requests
+To make requests, you may use the head, get, post, put, patch, and delete methods provided by the Http facade. First, let's examine how to make a basic GET request to another URL:
+```
+use Illuminate\Support\Facades\Http;
+ 
+$response = Http::get('http://example.com');
+```
+The get method returns an instance of Illuminate\Http\Client\Response, which provides a variety of methods that may be used to inspect the response:
+```
+$response->body() : string;
+$response->json($key = null) : array|mixed;
+$response->object() : object;
+$response->collect($key = null) : Illuminate\Support\Collection;
+$response->status() : int;
+$response->ok() : bool;
+$response->successful() : bool;
+$response->redirect(): bool;
+$response->failed() : bool;
+$response->serverError() : bool;
+$response->clientError() : bool;
+$response->header($header) : string;
+$response->headers() : array;
+```
+The Illuminate\Http\Client\Response object also implements the PHP ArrayAccess interface, allowing you to access JSON response data directly on the response:
+```
+return Http::get('http://example.com/users/1')['name'];
+```
+
+### Dumping Requests
+If you would like to dump the outgoing request instance before it is sent and terminate the script's execution, you may add the dd method to the beginning of your request definition:
+```
+return Http::dd()->get('http://example.com');
+```
+
+### Request Data
+Of course, it is common when making POST, PUT, and PATCH requests to send additional data with your request, so these methods accept an array of data as their second argument. By default, data will be sent using the application/json content type:
+```
+use Illuminate\Support\Facades\Http;
+ 
+$response = Http::post('http://example.com/users', [
+    'name' => 'Steve',
+    'role' => 'Network Administrator',
+]);
+```
+
+### GET Request Query Parameters
+When making GET requests, you may either append a query string to the URL directly or pass an array of key / value pairs as the second argument to the get method:
+
+```
+$response = Http::get('http://example.com/users', [
+    'name' => 'Taylor',
+    'page' => 1,
+]);
+```
+
+### Sending Form URL Encoded Requests
+If you would like to send data using the application/x-www-form-urlencoded content type, you should call the asForm method before making your request:
+```
+$response = Http::asForm()->post('http://example.com/users', [
+    'name' => 'Sara',
+    'role' => 'Privacy Consultant',
+]);
+```
+
+### Sending A Raw Request Body
+You may use the withBody method if you would like to provide a raw request body when making a request. The content type may be provided via the method's second argument:
+```
+$response = Http::withBody(
+    base64_encode($photo), 'image/jpeg'
+)->post('http://example.com/photo');
+```
+
+#### Multi-Part Requests
+If you would like to send files as multi-part requests, you should call the attach method before making your request. This method accepts the name of the file and its contents. If needed, you may provide a third argument which will be considered the file's filename:
+```
+$response = Http::attach(
+    'attachment', file_get_contents('photo.jpg'), 'photo.jpg'
+)->post('http://example.com/attachments');
+Instead of passing the raw contents of a file, you may pass a stream resource:
+
+$photo = fopen('photo.jpg', 'r');
+ 
+$response = Http::attach(
+    'attachment', $photo, 'photo.jpg'
+)->post('http://example.com/attachments');
+```
+
+### Headers
+Headers may be added to requests using the withHeaders method. This withHeaders method accepts an array of key / value pairs:
+```
+$response = Http::withHeaders([
+    'X-First' => 'foo',
+    'X-Second' => 'bar'
+])->post('http://example.com/users', [
+    'name' => 'Taylor',
+]);
+```
+You may use the accept method to specify the content type that your application is expecting in response to your request:
+```
+$response = Http::accept('application/json')->get('http://example.com/users');
+```
+For convenience, you may use the acceptJson method to quickly specify that your application expects the application/json content type in response to your request:
+```
+$response = Http::acceptJson()->get('http://example.com/users');
+```
+
+#### Authentication
+You may specify basic and digest authentication credentials using the withBasicAuth and withDigestAuth methods, respectively:
+```
+// Basic authentication...
+$response = Http::withBasicAuth('taylor@laravel.com', 'secret')->post(...);
+ 
+// Digest authentication...
+$response = Http::withDigestAuth('taylor@laravel.com', 'secret')->post(...);
+```
+#### Bearer Tokens
+If you would like to quickly add a bearer token to the request's Authorization header, you may use the withToken method:
+```
+$response = Http::withToken('token')->post(...);
+```
+
+### Timeout
+The timeout method may be used to specify the maximum number of seconds to wait for a response:
+```
+$response = Http::timeout(3)->get(...);
+```
+If the given timeout is exceeded, an instance of Illuminate\Http\Client\ConnectionException will be thrown.
+
+You may specify the maximum number of seconds to wait while trying to connect to a server using the connectTimeout method:
+```
+$response = Http::connectTimeout(3)->get(...);
+```
+### Retries
+If you would like HTTP client to automatically retry the request if a client or server error occurs, you may use the retry method. The retry method accepts the maximum number of times the request should be attempted and the number of milliseconds that Laravel should wait in between attempts:
+```
+$response = Http::retry(3, 100)->post(...);
+```
+If needed, you may pass a third argument to the retry method. The third argument should be a callable that determines if the retries should actually be attempted. For example, you may wish to only retry the request if the initial request encounters an ConnectionException:
+```
+$response = Http::retry(3, 100, function ($exception) {
+    return $exception instanceof ConnectionException;
+})->post(...);
+```
+If all of the requests fail, an instance of Illuminate\Http\Client\RequestException will be thrown. If you would like to disable this behavior, you may provide a throw argument with a value of false. When disabled, the last response received by the client will be returned after all retries have been attempted:
+```
+$response = Http::retry(3, 100, throw: false)->post(...);
+```
+
+#### Error Handling
+Unlike Guzzle's default behavior, Laravel's HTTP client wrapper does not throw exceptions on client or server errors (400 and 500 level responses from servers). You may determine if one of these errors was returned using the successful, clientError, or serverError methods:
+
+```
+// Determine if the status code is >= 200 and < 300...
+$response->successful();
+ 
+// Determine if the status code is >= 400...
+$response->failed();
+ 
+// Determine if the response has a 400 level status code...
+$response->clientError();
+ 
+// Determine if the response has a 500 level status code...
+$response->serverError();
+ 
+// Immediately execute the given callback if there was a client or server error...
+$response->onError(callable $callback);
+
+```
+
+### Throwing Exceptions
+If you have a response instance and would like to throw an instance of Illuminate\Http\Client\RequestException if the response status code indicates a client or server error, you may use the throw or throwIf methods:
+```
+$response = Http::post(...);
+ 
+// Throw an exception if a client or server error occurred...
+$response->throw();
+ 
+// Throw an exception if an error occurred and the given condition is true...
+$response->throwIf($condition);
+ 
+return $response['user']['id'];
+```
+The Illuminate\Http\Client\RequestException instance has a public $response property which will allow you to inspect the returned response.
+
+The throw method returns the response instance if no error occurred, allowing you to chain other operations onto the throw method:
+```
+return Http::post(...)->throw()->json();
+```
+If you would like to perform some additional logic before the exception is thrown, you may pass a closure to the throw method. The exception will be thrown automatically after the closure is invoked, so you do not need to re-throw the exception from within the closure:
+```
+return Http::post(...)->throw(function ($response, $e) {
+    //
+})->json();
+
+```
+#### Guzzle Options
+You may specify additional Guzzle request options using the withOptions method. The withOptions method accepts an array of key / value pairs:
+```
+$response = Http::withOptions([
+    'debug' => true,
+])->get('http://example.com/users');
+```
+
+#### Concurrent Requests
+Sometimes, you may wish to make multiple HTTP requests concurrently. In other words, you want several requests to be dispatched at the same time instead of issuing the requests sequentially. This can lead to substantial performance improvements when interacting with slow HTTP APIs.
+
+Thankfully, you may accomplish this using the pool method. The pool method accepts a closure which receives an Illuminate\Http\Client\Pool instance, allowing you to easily add requests to the request pool for dispatching:
+```
+use Illuminate\Http\Client\Pool;
+use Illuminate\Support\Facades\Http;
+ 
+$responses = Http::pool(fn (Pool $pool) => [
+    $pool->get('http://localhost/first'),
+    $pool->get('http://localhost/second'),
+    $pool->get('http://localhost/third'),
+]);
+ 
+return $responses[0]->ok() &&
+       $responses[1]->ok() &&
+       $responses[2]->ok();
+```
+As you can see, each response instance can be accessed based on the order it was added to the pool. If you wish, you can name the requests using the as method, which allows you to access the corresponding responses by name:
+```
+use Illuminate\Http\Client\Pool;
+use Illuminate\Support\Facades\Http;
+ 
+$responses = Http::pool(fn (Pool $pool) => [
+    $pool->as('first')->get('http://localhost/first'),
+    $pool->as('second')->get('http://localhost/second'),
+    $pool->as('third')->get('http://localhost/third'),
+]);
+ 
+return $responses['first']->ok();
+```
+
+#### Macros
+The Laravel HTTP client allows you to define "macros", which can serve as a fluent, expressive mechanism to configure common request paths and headers when interacting with services throughout your application. To get started, you may define the macro within the boot method of your application's App\Providers\AppServiceProvider class:
+```
+use Illuminate\Support\Facades\Http;
+ 
+/**
+ * Bootstrap any application services.
+ *
+ * @return void
+ */
+public function boot()
+{
+    Http::macro('github', function () {
+        return Http::withHeaders([
+            'X-Example' => 'example',
+        ])->baseUrl('https://github.com');
+    });
+}
+```
+Once your macro has been configured, you may invoke it from anywhere in your application to create a pending request with the specified configuration:
+```
+$response = Http::github()->get('/');
+```
+
+#### Testing
+Many Laravel services provide functionality to help you easily and expressively write tests, and Laravel's HTTP wrapper is no exception. The Http facade's fake method allows you to instruct the HTTP client to return stubbed / dummy responses when requests are made.
+
+Faking Responses
+For example, to instruct the HTTP client to return empty, 200 status code responses for every request, you may call the fake method with no arguments:
+```
+    use Illuminate\Support\Facades\Http;
+    
+    Http::fake();
+    
+    $response = Http::post(...);
+```
+
+#### Events
+Laravel fires three events during the process of sending HTTP requests. The RequestSending event is fired prior to a request being sent, while the ResponseReceived event is fired after a response is received for a given request. The ConnectionFailed event is fired if no response is received for a given request.
+
+The RequestSending and ConnectionFailed events both contain a public $request property that you may use to inspect the Illuminate\Http\Client\Request instance. Likewise, the ResponseReceived event contains a $request property as well as a $response property which may be used to inspect the Illuminate\Http\Client\Response instance. You may register event listeners for this event in your App\Providers\EventServiceProvider service provider:
+```
+/**
+ * The event listener mappings for the application.
+ *
+ * @var array
+ */
+protected $listen = [
+    'Illuminate\Http\Client\Events\RequestSending' => [
+        'App\Listeners\LogRequestSending',
+    ],
+    'Illuminate\Http\Client\Events\ResponseReceived' => [
+        'App\Listeners\LogResponseReceived',
+    ],
+    'Illuminate\Http\Client\Events\ConnectionFailed' => [
+        'App\Listeners\LogConnectionFailed',
+    ],
+];
+```
+### Localization
+
+#### Introduction
+Laravel's localization features provide a convenient way to retrieve strings in various languages, allowing you to easily support multiple languages within your application.
+
+#### Mail
+
+#### Introduction
+Sending email doesn't have to be complicated. Laravel provides a clean, simple email API powered by the popular Symfony Mailer component. Laravel and Symfony Mailer provide drivers for sending email via SMTP, Mailgun, Postmark, Amazon SES, and sendmail, allowing you to quickly get started sending mail through a local or cloud based service of your choice.
+
+#### Configuration
+Laravel's email services may be configured via your application's config/mail.php configuration file. Each mailer configured within this file may have its own unique configuration and even its own unique "transport", allowing your application to use different email services to send certain email messages. For example, your application might use Postmark to send transactional emails while using Amazon SES to send bulk emails.
+
+Within your mail configuration file, you will find a mailers configuration array. This array contains a sample configuration entry for each of the major mail drivers / transports supported by Laravel, while the default configuration value determines which mailer will be used by default when your application needs to send an email message.
+
+#### Configuration
+Laravel's email services may be configured via your application's config/mail.php configuration file. Each mailer configured within this file may have its own unique configuration and even its own unique "transport", allowing your application to use different email services to send certain email messages. For example, your application might use Postmark to send transactional emails while using Amazon SES to send bulk emails.
+
+Within your mail configuration file, you will find a mailers configuration array. This array contains a sample configuration entry for each of the major mail drivers / transports supported by Laravel, while the default configuration value determines which mailer will be used by default when your application needs to send an email message.
+
+#### Driver / Transport Prerequisites
+The API based drivers such as Mailgun and Postmark are often simpler and faster than sending mail via SMTP servers. Whenever possible, we recommend that you use one of these drivers.
+
+#### Generating Mailables
+When building Laravel applications, each type of email sent by your application is represented as a "mailable" class. These classes are stored in the app/Mail directory. Don't worry if you don't see this directory in your application, since it will be generated for you when you create your first mailable class using the make:mail Artisan command:
+```
+php artisan make:mail OrderShipped
+```
+
+#### Writing Mailables
+Once you have generated a mailable class, open it up so we can explore its contents. First, note that all of a mailable class' configuration is done in the build method. Within this method, you may call various methods such as from, subject, view, and attach to configure the email's presentation and delivery.
+
+
+You may type-hint dependencies on the mailable's build method. The Laravel service container automatically injects these dependencies.
+
+Configuring The Sender
+Using The from Method
+First, let's explore configuring the sender of the email. Or, in other words, who the email is going to be "from". There are two ways to configure the sender. First, you may use the from method within your mailable class' build method:
+```
+/**
+ * Build the message.
+ *
+ * @return $this
+ */
+public function build()
+{
+    return $this->from('example@example.com', 'Example')
+                ->view('emails.orders.shipped');
+}
+```
+
+#### Configuring The View
+Within a mailable class' build method, you may use the view method to specify which template should be used when rendering the email's contents. Since each email typically uses a Blade template to render its contents, you have the full power and convenience of the Blade templating engine when building your email's HTML:
+```
+/**
+ * Build the message.
+ *
+ * @return $this
+ */
+public function build()
+{
+    return $this->view('emails.orders.shipped');
+}
+```
+
+You may wish to create a resources/views/emails directory to house all of your email templates; however, you are free to place them wherever you wish within your resources/views directory.
+
+### View Data
+#### Via Public Properties
+Typically, you will want to pass some data to your view that you can utilize when rendering the email's HTML. There are two ways you may make data available to your view. First, any public property defined on your mailable class will automatically be made available to the view. So, for example, you may pass data into your mailable class' constructor and set that data to public properties defined on the class:
+```
+<?php
+ 
+namespace App\Mail;
+ 
+use App\Models\Order;
+use Illuminate\Bus\Queueable;
+use Illuminate\Mail\Mailable;
+use Illuminate\Queue\SerializesModels;
+ 
+class OrderShipped extends Mailable
+{
+    use Queueable, SerializesModels;
+ 
+    /**
+     * The order instance.
+     *
+     * @var \App\Models\Order
+     */
+    public $order;
+ 
+    /**
+     * Create a new message instance.
+     *
+     * @param  \App\Models\Order  $order
+     * @return void
+     */
+    public function __construct(Order $order)
+    {
+        $this->order = $order;
+    }
+ 
+    /**
+     * Build the message.
+     *
+     * @return $this
+     */
+    public function build()
+    {
+        return $this->view('emails.orders.shipped');
+    }
+}
+```
+Once the data has been set to a public property, it will automatically be available in your view, so you may access it like you would access any other data in your Blade templates:
+```
+<div>
+    Price: {{ $order->price }}
+</div>
+```
+Via The with Method:
+If you would like to customize the format of your email's data before it is sent to the template, you may manually pass your data to the view via the with method. Typically, you will still pass data via the mailable class' constructor; however, you should set this data to protected or private properties so the data is not automatically made available to the template. Then, when calling the with method, pass an array of data that you wish to make available to the template:
+
+```
+<?php
+ 
+namespace App\Mail;
+ 
+use App\Models\Order;
+use Illuminate\Bus\Queueable;
+use Illuminate\Mail\Mailable;
+use Illuminate\Queue\SerializesModels;
+ 
+class OrderShipped extends Mailable
+{
+    use Queueable, SerializesModels;
+ 
+    /**
+     * The order instance.
+     *
+     * @var \App\Models\Order
+     */
+    protected $order;
+ 
+    /**
+     * Create a new message instance.
+     *
+     * @param  \App\Models\Order  $order
+     * @return void
+     */
+    public function __construct(Order $order)
+    {
+        $this->order = $order;
+    }
+ 
+    /**
+     * Build the message.
+     *
+     * @return $this
+     */
+    public function build()
+    {
+        return $this->view('emails.orders.shipped')
+                    ->with([
+                        'orderName' => $this->order->name,
+                        'orderPrice' => $this->order->price,
+                    ]);
+    }
+}
+```
+Once the data has been passed to the with method, it will automatically be available in your view, so you may access it like you would access any other data in your Blade templates:
+```
+<div>
+    Price: {{ $orderPrice }}
+</div>
+```
+
+#### Attachments
+To add attachments to an email, use the attach method within the mailable class' build method. The attach method accepts the full path to the file as its first argument:
+```
+/**
+ * Build the message.
+ *
+ * @return $this
+ */
+public function build()
+{
+    return $this->view('emails.orders.shipped')
+                ->attach('/path/to/file');
+}
+```
+
+When attaching files to a message, you may also specify the display name and / or MIME type by passing an array as the second argument to the attach method:
+```
+/**
+ * Build the message.
+ *
+ * @return $this
+ */
+public function build()
+{
+    return $this->view('emails.orders.shipped')
+                ->attach('/path/to/file', [
+                    'as' => 'name.pdf',
+                    'mime' => 'application/pdf',
+                ]);
+}
+```
+
+#### Attaching Files From Disk
+If you have stored a file on one of your filesystem disks, you may attach it to the email using the attachFromStorage method:
+```
+/**
+ * Build the message.
+ *
+ * @return $this
+ */
+public function build()
+{
+   return $this->view('emails.orders.shipped')
+               ->attachFromStorage('/path/to/file');
+}
+```
+If necessary, you may specify the file's attachment name and additional options using the second and third arguments to the attachFromStorage method:
+```
+/**
+ * Build the message.
+ *
+ * @return $this
+ */
+public function build()
+{
+   return $this->view('emails.orders.shipped')
+               ->attachFromStorage('/path/to/file', 'name.pdf', [
+                   'mime' => 'application/pdf'
+               ]);
+}
+```
+The attachFromStorageDisk method may be used if you need to specify a storage disk other than your default disk:
+```
+/**
+ * Build the message.
+ *
+ * @return $this
+ */
+public function build()
+{
+   return $this->view('emails.orders.shipped')
+               ->attachFromStorageDisk('s3', '/path/to/file');
+}
+```
+
+#### Sending Mail
+To send a message, use the to method on the Mail facade. The to method accepts an email address, a user instance, or a collection of users. If you pass an object or collection of objects, the mailer will automatically use their email and name properties when determining the email's recipients, so make sure these attributes are available on your objects. Once you have specified your recipients, you may pass an instance of your mailable class to the send method:
+```
+<?php
+ 
+namespace App\Http\Controllers;
+ 
+use App\Http\Controllers\Controller;
+use App\Mail\OrderShipped;
+use App\Models\Order;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
+ 
+class OrderShipmentController extends Controller
+{
+    /**
+     * Ship the given order.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function store(Request $request)
+    {
+        $order = Order::findOrFail($request->order_id);
+ 
+        // Ship the order...
+ 
+        Mail::to($request->user())->send(new OrderShipped($order));
+    }
+}
+```
+You are not limited to just specifying the "to" recipients when sending a message. You are free to set "to", "cc", and "bcc" recipients by chaining their respective methods together:
+```
+Mail::to($request->user())
+    ->cc($moreUsers)
+    ->bcc($evenMoreUsers)
+    ->send(new OrderShipped($order));
+
+```
+
+#### Looping Over Recipients
+Occasionally, you may need to send a mailable to a list of recipients by iterating over an array of recipients / email addresses. However, since the to method appends email addresses to the mailable's list of recipients, each iteration through the loop will send another email to every previous recipient. Therefore, you should always re-create the mailable instance for each recipient:
+```
+foreach (['taylor@example.com', 'dries@example.com'] as $recipient) {
+    Mail::to($recipient)->send(new OrderShipped($order));
+}
+```
+
+#### Sending Mail Via A Specific Mailer
+By default, Laravel will send email using the mailer configured as the default mailer in your application's mail configuration file. However, you may use the mailer method to send a message using a specific mailer configuration:
+```
+Mail::mailer('postmark')
+        ->to($request->user())
+        ->send(new OrderShipped($order));
+
+```
+
+### Notifications
+#### Introduction
+In addition to support for sending email, Laravel provides support for sending notifications across a variety of delivery channels, including email, SMS (via Vonage, formerly known as Nexmo), and Slack. In addition, a variety of community built notification channels have been created to send notification over dozens of different channels! Notifications may also be stored in a database so they may be displayed in your web interface.
+
+Typically, notifications should be short, informational messages that notify users of something that occurred in your application. For example, if you are writing a billing application, you might send an "Invoice Paid" notification to your users via the email and SMS channels.
+
+#### Generating Notifications
+In Laravel, each notification is represented by a single class that is typically stored in the app/Notifications directory. Don't worry if you don't see this directory in your application - it will be created for you when you run the make:notification Artisan command:
+```
+php artisan make:notification InvoicePaid
+```
+This command will place a fresh notification class in your app/Notifications directory. Each notification class contains a via method and a variable number of message building methods, such as toMail or toDatabase, that convert the notification to a message tailored for that particular channel.
+
+#### Sending Notifications
+Using The Notifiable Trait
+Notifications may be sent in two ways: using the notify method of the Notifiable trait or using the Notification facade. The Notifiable trait is included on your application's App\Models\User model by default:
+```
+<?php
+ 
+namespace App\Models;
+ 
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
+ 
+class User extends Authenticatable
+{
+    use Notifiable;
+}
+```
+The notify method that is provided by this trait expects to receive a notification instance:
+```
+use App\Notifications\InvoicePaid;
+ 
+ $user = User::find($id);
+ $user->notify(new InvoicePaid());
+ ```
+
+Note Remember, you may use the Notifiable trait on any of your models. You are not limited to only including it on your User model.
+
+
+#### Using The Notification Facade
+Alternatively, you may send notifications via the Notification facade. This approach is useful when you need to send a notification to multiple notifiable entities such as a collection of users. To send notifications using the facade, pass all of the notifiable entities and the notification instance to the send method:
+```
+use Illuminate\Support\Facades\Notification;
+ 
+Notification::send($users, new InvoicePaid($invoice));
+```
+You can also send notifications immediately using the sendNow method. This method will send the notification immediately even if the notification implements the ShouldQueue interface:
+```
+Notification::sendNow($developers, new DeploymentCompleted($deployment));
+```
+
+#### Specifying Delivery Channels
+
+Every notification class has a via method that determines on which channels the notification will be delivered. Notifications may be sent on the mail, database, broadcast, vonage, and slack channels.
+
+The via method receives a $notifiable instance, which will be an instance of the class to which the notification is being sent. You may use $notifiable to determine which channels the notification should be delivered on:
+```
+/**
+ * Get the notification's delivery channels.
+ *
+ * @param  mixed  $notifiable
+ * @return array
+ */
+public function via($notifiable)
+{
+    return $notifiable->prefers_sms ? ['vonage'] : ['mail', 'database'];
+}
+```
+
+### Package Development
+
+#### Introduction
+Packages are the primary way of adding functionality to Laravel. Packages might be anything from a great way to work with dates like Carbon or a package that allows you to associate files with Eloquent models like Spatie's Laravel Media Library.
+
+There are different types of packages. Some packages are stand-alone, meaning they work with any PHP framework. Carbon and PHPUnit are examples of stand-alone packages. Any of these packages may be used with Laravel by requiring them in your composer.json file.
+
+### Queues
+
+#### Introduction
+While building your web application, you may have some tasks, such as parsing and storing an uploaded CSV file, that take too long to perform during a typical web request. Thankfully, Laravel allows you to easily create queued jobs that may be processed in the background. By moving time intensive tasks to a queue, your application can respond to web requests with blazing speed and provide a better user experience to your customers.
+
+Laravel queues provide a unified queueing API across a variety of different queue backends, such as Amazon SQS, Redis, or even a relational database.
+
+Laravel's queue configuration options are stored in your application's config/queue.php configuration file. In this file, you will find connection configurations for each of the queue drivers that are included with the framework, including the database, Amazon SQS, Redis, and Beanstalkd drivers, as well as a synchronous driver that will execute jobs immediately (for use during local development). A null queue driver is also included which discards queued jobs.
+
+
+### Task Scheduling
+
+#### Introduction
+In the past, you may have written a cron configuration entry for each task you needed to schedule on your server. However, this can quickly become a pain because your task schedule is no longer in source control and you must SSH into your server to view your existing cron entries or add additional entries.
+
+Laravel's command scheduler offers a fresh approach to managing scheduled tasks on your server. The scheduler allows you to fluently and expressively define your command schedule within your Laravel application itself. When using the scheduler, only a single cron entry is needed on your server. Your task schedule is defined in the app/Console/Kernel.php file's schedule method. To help you get started, a simple example is defined within the method.
+
+#### Defining Schedules
+You may define all of your scheduled tasks in the schedule method of your application's App\Console\Kernel class. To get started, let's take a look at an example. In this example, we will schedule a closure to be called every day at midnight. Within the closure we will execute a database query to clear a table:
+```
+<?php
+ 
+namespace App\Console;
+ 
+use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
+use Illuminate\Support\Facades\DB;
+ 
+class Kernel extends ConsoleKernel
+{
+    /**
+     * Define the application's command schedule.
+     *
+     * @param  \Illuminate\Console\Scheduling\Schedule  $schedule
+     * @return void
+     */
+    protected function schedule(Schedule $schedule)
+    {
+        $schedule->call(function () {
+            DB::table('recent_users')->delete();
+        })->daily();
+
+         $schedule->call(function () {
+            info("Second Schedule task call in  One  minute new "); //it will add in laravel.log file 
+        })->everyMinute();
+    }
+}
+```
+
+##### Running The Scheduler Locally
+Typically, you would not add a scheduler cron entry to your local development machine. Instead, you may use the schedule:work Artisan command. This command will run in the foreground and invoke the scheduler every minute until you terminate the command:
+```
+php artisan schedule:work
+```
+If you would like to view an overview of your scheduled tasks and the next time they are scheduled to run, you may use the schedule:list Artisan command:
+```
+php artisan schedule:list
+```
+
+##### Scheduling Artisan Commands
+In addition to scheduling closures, you may also schedule Artisan commands and system commands. For example, you may use the command method to schedule an Artisan command using either the command's name or class.
+
+When scheduling Artisan commands using the command's class name, you may pass an array of additional command-line arguments that should be provided to the command when it is invoked:
+
+```
+use App\Console\Commands\SendEmailsCommand;
+ 
+$schedule->command('emails:send')->daily();
+ 
+$schedule->command(SendEmailsCommand::class)->daily();
+```
+
+
+#### Scheduling Shell Commands
+The exec method may be used to issue a command to the operating system:
+```
+$schedule->exec('node /home/forge/script.js')->daily();
+```
+
+#### 
+Schedule Frequency Options
+We've already seen a few examples of how you may configure a task to run at specified intervals. However, there are many more task schedule frequencies that you may assign to a task:
+```
+Method	Description
+->cron('* * * * *');	Run the task on a custom cron schedule
+->everyMinute();	Run the task every minute
+->everyTwoMinutes();	Run the task every two minutes
+->everyThreeMinutes();	Run the task every three minutes
+->everyFourMinutes();	Run the task every four minutes
+->everyFiveMinutes();	Run the task every five minutes
+->everyTenMinutes();	Run the task every ten minutes
+->everyFifteenMinutes();	Run the task every fifteen minutes
+->everyThirtyMinutes();	Run the task every thirty minutes
+->hourly();	Run the task every hour
+->hourlyAt(17);	Run the task every hour at 17 minutes past the hour
+->everyTwoHours();	Run the task every two hours
+->everyThreeHours();	Run the task every three hours
+->everyFourHours();	Run the task every four hours
+->everySixHours();	Run the task every six hours
+->daily();	Run the task every day at midnight
+->dailyAt('13:00');	Run the task every day at 13:00
+->twiceDaily(1, 13);	Run the task daily at 1:00 & 13:00
+->weekly();	Run the task every Sunday at 00:00
+->weeklyOn(1, '8:00');	Run the task every week on Monday at 8:00
+->monthly();	Run the task on the first day of every month at 00:00
+->monthlyOn(4, '15:00');	Run the task every month on the 4th at 15:00
+->twiceMonthly(1, 16, '13:00');	Run the task monthly on the 1st and 16th at 13:00
+->lastDayOfMonth('15:00');	Run the task on the last day of the month at 15:00
+->quarterly();	Run the task on the first day of every quarter at 00:00
+->yearly();	Run the task on the first day of every year at 00:00
+->yearlyOn(6, 1, '17:00');	Run the task every year on June 1st at 17:00
+->timezone('America/New_York');	Set the timezone for the task
+
+```
+
+These methods may be combined with additional constraints to create even more finely tuned schedules that only run on certain days of the week. For example, you may schedule a command to run weekly on Monday:
+```
+// Run once per week on Monday at 1 PM...
+$schedule->call(function () {
+    //
+})->weekly()->mondays()->at('13:00');
+ 
+// Run hourly from 8 AM to 5 PM on weekdays...
+$schedule->command('foo')
+          ->weekdays()
+          ->hourly()
+          ->timezone('America/Chicago')
+          ->between('8:00', '17:00');
+
+```
+A list of additional schedule constraints may be found below:
+```
+Method	Description
+->weekdays();	Limit the task to weekdays
+->weekends();	Limit the task to weekends
+->sundays();	Limit the task to Sunday
+->mondays();	Limit the task to Monday
+->tuesdays();	Limit the task to Tuesday
+->wednesdays();	Limit the task to Wednesday
+->thursdays();	Limit the task to Thursday
+->fridays();	Limit the task to Friday
+->saturdays();	Limit the task to Saturday
+->days(array|mixed);	Limit the task to specific days
+->between($startTime, $endTime);	Limit the task to run between start and end times
+->unlessBetween($startTime, $endTime);	Limit the task to not run between start and end times
+->when(Closure);	Limit the task based on a truth test
+->environments($env);	Limit the task to specific environments
+```
+
+##### Day Constraints
+The days method may be used to limit the execution of a task to specific days of the week. For example, you may schedule a command to run hourly on Sundays and Wednesdays:
+```
+$schedule->command('emails:send')
+                ->hourly()
+                ->days([0, 3]);
+```
+Alternatively, you may use the constants available on the Illuminate\Console\Scheduling\Schedule class when defining the days on which a task should run:
+```
+use Illuminate\Console\Scheduling\Schedule;
+ 
+$schedule->command('emails:send')
+                ->hourly()
+                ->days([Schedule::SUNDAY, Schedule::WEDNESDAY]);
+```  
+
+##### Between Time Constraints
+The between method may be used to limit the execution of a task based on the time of day:
+```
+$schedule->command('emails:send')
+                    ->hourly()
+                    ->between('7:00', '22:00');
+
+```
+Similarly, the unlessBetween method can be used to exclude the execution of a task for a period of time:
+```
+$schedule->command('emails:send')
+                    ->hourly()
+                    ->unlessBetween('23:00', '4:00');
+```                    
+
+check full method use follow https://laravel.com/docs/9.x/scheduling
+
+###### Environment Constraints
+The environments method may be used to execute tasks only on the given environments (as defined by the APP_ENV environment variable):
+```
+$schedule->command('emails:send')
+            ->daily()
+            ->environments(['staging', 'production']);
+```            
+
+#### Timezones
+Using the timezone method, you may specify that a scheduled task's time should be interpreted within a given timezone:
+```
+$schedule->command('report:generate')
+         ->timezone('America/New_York')
+         ->at('2:00')
+```         
+
+#### Preventing Task Overlaps
+By default, scheduled tasks will be run even if the previous instance of the task is still running. To prevent this, you may use the withoutOverlapping method:
+```
+$schedule->command('emails:send')->withoutOverlapping();
+```
+
+In this example, the emails:send Artisan command will be run every minute if it is not already running. The withoutOverlapping method is especially useful if you have tasks that vary drastically in their execution time, preventing you from predicting exactly how long a given task will take.
+
+If needed, you may specify how many minutes must pass before the "without overlapping" lock expires. By default, the lock will expire after 24 hours:
+```
+$schedule->command('emails:send')->withoutOverlapping(10);
+```
+
+##### Running Tasks On One Server
+
+To utilize this feature, your application must be using the database, memcached, dynamodb, or redis cache driver as your application's default cache driver. In addition, all servers must be communicating with the same central cache server.
+
+#### If your application's scheduler is running on multiple servers, you may limit a scheduled job to only execute on a single server. For instance, assume you have a scheduled task that generates a new report every Friday night. If the task scheduler is running on three worker servers, the scheduled task will run on all three servers and generate the report three times. Not good!
+
+To indicate that the task should run on only one server, use the onOneServer method when defining the scheduled task. The first server to obtain the task will secure an atomic lock on the job to prevent other servers from running the same task at the same time:
+```
+    $schedule->command('report:generate')
+                    ->fridays()
+                    ->at('17:00')
+                    ->onOneServer();
+```    
+
+
+##### Background Tasks
+By default, multiple tasks scheduled at the same time will execute sequentially based on the order they are defined in your schedule method. If you have long-running tasks, this may cause subsequent tasks to start much later than anticipated. If you would like to run tasks in the background so that they may all run simultaneously, you may use the runInBackground method:
+```
+$schedule->command('analytics:report')
+         ->daily()
+         ->runInBackground();
+```
+
+
+The runInBackground method may only be used when scheduling tasks via the command and exec methods.
+
+##### Maintenance Mode
+Your application's scheduled tasks will not run when the application is in maintenance mode, since we don't want your tasks to interfere with any unfinished maintenance you may be performing on your server. However, if you would like to force a task to run even in maintenance mode, you may call the evenInMaintenanceMode method when defining the task:
+```
+$schedule->command('emails:send')->evenInMaintenanceMode();
+```
+
+##### Running The Scheduler
+Now that we have learned how to define scheduled tasks, let's discuss how to actually run them on our server. The schedule:run Artisan command will evaluate all of your scheduled tasks and determine if they need to run based on the server's current time.
+
+So, when using Laravel's scheduler, we only need to add a single cron configuration entry to our server that runs the schedule:run command every minute. If you do not know how to add cron entries to your server, consider using a service such as Laravel Forge which can manage the cron entries for you:
+```
+* * * * * cd /path-to-your-project && php artisan schedule:run >> /dev/null 2>&1
+```
+
+#### Task Hooks
+Using the before and after methods, you may specify code to be executed before and after the scheduled task is executed:
+```
+$schedule->command('emails:send')
+         ->daily()
+         ->before(function () {
+             // The task is about to execute...
+         })
+         ->after(function () {
+             // The task has executed...
+         });
+```
+The onSuccess and onFailure methods allow you to specify code to be executed if the scheduled task succeeds or fails. A failure indicates that the scheduled Artisan or system command terminated with a non-zero exit code:
+```
+$schedule->command('emails:send')
+         ->daily()
+         ->onSuccess(function () {
+             // The task succeeded...
+         })
+         ->onFailure(function () {
+             // The task failed...
+```
+If output is available from your command, you may access it in your after, onSuccess or onFailure hooks by type-hinting an Illuminate\Support\Stringable instance as the $output argument of your hook's closure definition:
+```
+use Illuminate\Support\Stringable;
+ 
+$schedule->command('emails:send')
+         ->daily()
+         ->onSuccess(function (Stringable $output) {
+             // The task succeeded...
+         })
+         ->onFailure(function (Stringable $output) {
+             // The task failed...
+         });
+
+```         
+###### Pinging URLs
+Using the pingBefore and thenPing methods, the scheduler can automatically ping a given URL before or after a task is executed. This method is useful for notifying an external service, such as Envoyer, that your scheduled task is beginning or has finished execution:
+```
+$schedule->command('emails:send')
+         ->daily()
+         ->pingBefore($url)
+         ->thenPing($url);
+```
+
+You can also call method from controller see below   
+
+```
+ $schedule->call('App\Http\Controllers\DemoRequestHandController@createcsv')
+        ->everyMinute();
+
+ ```       
+
+ ## security
+
+ ### Authentication
+ #### Introduction
+Many web applications provide a way for their users to authenticate with the application and "login". Implementing this feature in web applications can be a complex and potentially risky endeavor. For this reason, Laravel strives to give you the tools you need to implement authentication quickly, securely, and easily.
+
+At its core, Laravel's authentication facilities are made up of "guards" and "providers". Guards define how users are authenticated for each request. For example, Laravel ships with a session guard which maintains state using session storage and cookies.
+
+Providers define how users are retrieved from your persistent storage. Laravel ships with support for retrieving users using Eloquent and the database query builder. However, you are free to define additional providers as needed for your application.
+
+Your application's authentication configuration file is located at config/auth.php. This file contains several well-documented options for tweaking the behavior of Laravel's authentication services.
+
+#### Retrieving The Authenticated User
+After installing an authentication starter kit and allowing users to register and authenticate with your application, you will often need to interact with the currently authenticated user. While handling an incoming request, you may access the authenticated user via the Auth facade's user method:
+```
+use Illuminate\Support\Facades\Auth;
+ 
+// Retrieve the currently authenticated user...
+$user = Auth::user();
+ 
+// Retrieve the currently authenticated user's ID...
+$id = Auth::id();
+```
+
+Alternatively, once a user is authenticated, you may access the authenticated user via an Illuminate\Http\Request instance. Remember, type-hinted classes will automatically be injected into your controller methods. By type-hinting the Illuminate\Http\Request object, you may gain convenient access to the authenticated user from any controller method in your application via the request's user method:
+```
+<?php
+ 
+namespace App\Http\Controllers;
+ 
+use Illuminate\Http\Request;
+ 
+class FlightController extends Controller
+{
+    /**
+     * Update the flight information for an existing flight.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function update(Request $request)
+    {
+        // $request->user()
+    }
+}
+```
+
+#### Determining If The Current User Is Authenticated
+To determine if the user making the incoming HTTP request is authenticated, you may use the check method on the Auth facade. This method will return true if the user is authenticated:
+```
+use Illuminate\Support\Facades\Auth;
+ 
+if (Auth::check()) {
+    // The user is logged in...
+}
+```
+
+#### Protecting Routes
+Route middleware can be used to only allow authenticated users to access a given route. Laravel ships with an auth middleware, which references the Illuminate\Auth\Middleware\Authenticate class. Since this middleware is already registered in your application's HTTP kernel, all you need to do is attach the middleware to a route definition:
+```
+Route::get('/flights', function () {
+    // Only authenticated users may access this route...
+})->middleware('auth');
+```
+
+##### Redirecting Unauthenticated Users
+When the auth middleware detects an unauthenticated user, it will redirect the user to the login named route. You may modify this behavior by updating the redirectTo function in your application's app/Http/Middleware/Authenticate.php file:
+```
+/**
+ * Get the path the user should be redirected to.
+ *
+ * @param  \Illuminate\Http\Request  $request
+ * @return string
+ */
+protected function redirectTo($request)
+{
+    return route('login');
+}
+```
+
+#### Manually Authenticating Users
+You are not required to use the authentication scaffolding included with Laravel's application starter kits. If you choose not to use this scaffolding, you will need to manage user authentication using the Laravel authentication classes directly. Don't worry, it's a cinch!
+
+
+We will access Laravel's authentication services via the Auth facade, so we'll need to make sure to import the Auth facade at the top of the class. Next, let's check out the attempt method. The attempt method is normally used to handle authentication attempts from your application's "login" form. If authentication is successful, you should regenerate the user's session to prevent session fixation:
+```
+<?php
+ 
+namespace App\Http\Controllers;
+ 
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+ 
+class LoginController extends Controller
+{
+    /**
+     * Handle an authentication attempt.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function authenticate(Request $request)
+    {
+        $credentials = $request->validate([
+            'email' => ['required', 'email'],
+            'password' => ['required'],
+        ]);
+ 
+        if (Auth::attempt($credentials)) {
+            $request->session()->regenerate();
+ 
+            return redirect()->intended('dashboard');
+        }
+ 
+        return back()->withErrors([
+            'email' => 'The provided credentials do not match our records.',
+        ])->onlyInput(['email']);
+    }
+}
+```
+The attempt method accepts an array of key / value pairs as its first argument. The values in the array will be used to find the user in your database table. So, in the example above, the user will be retrieved by the value of the email column. If the user is found, the hashed password stored in the database will be compared with the password value passed to the method via the array. You should not hash the incoming request's password value, since the framework will automatically hash the value before comparing it to the hashed password in the database. An authenticated session will be started for the user if the two hashed passwords match.
+
+Remember, Laravel's authentication services will retrieve users from your database based on your authentication guard's "provider" configuration. In the default config/auth.php configuration file, the Eloquent user provider is specified and it is instructed to use the App\Models\User model when retrieving users. You may change these values within your configuration file based on the needs of your application.
+
+The attempt method will return true if authentication was successful. Otherwise, false will be returned.
+
+##### Specifying Additional Conditions
+If you wish, you may also add extra query conditions to the authentication query in addition to the user's email and password. To accomplish this, we may simply add the query conditions to the array passed to the attempt method. For example, we may verify that the user is marked as "active":
+```
+if (Auth::attempt(['email' => $email, 'password' => $password, 'active' => 1])) {
+    // Authentication was successful...
+}
+```
+ Note In these examples, email is not a required option, it is merely used as an example. You should use whatever column name corresponds to a "username" in your database table
+
+ #### Remembering Users
+Many web applications provide a "remember me" checkbox on their login form. If you would like to provide "remember me" functionality in your application, you may pass a boolean value as the second argument to the attempt method.
+
+When this value is true, Laravel will keep the user authenticated indefinitely or until they manually logout. Your users table must include the string remember_token column, which will be used to store the "remember me" token. The users table migration included with new Laravel applications already includes this column:
+```
+use Illuminate\Support\Facades\Auth;
+ 
+if (Auth::attempt(['email' => $email, 'password' => $password], $remember)) {
+    // The user is being remembered...
+}
+```
+
+##### Logging Out
+To manually log users out of your application, you may use the logout method provided by the Auth facade. This will remove the authentication information from the user's session so that subsequent requests are not authenticated.
+
+In addition to calling the logout method, it is recommended that you invalidate the user's session and regenerate their CSRF token. After logging the user out, you would typically redirect the user to the root of your application:
+```
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+ 
+/**
+ * Log the user out of the application.
+ *
+ * @param  \Illuminate\Http\Request  $request
+ * @return \Illuminate\Http\Response
+ */
+public function logout(Request $request)
+{
+    Auth::logout();
+ 
+    $request->session()->invalidate();
+ 
+    $request->session()->regenerateToken();
+ 
+    return redirect('/');
+}
+```
+
+##### Invalidating Sessions On Other Devices
+Laravel also provides a mechanism for invalidating and "logging out" a user's sessions that are active on other devices without invalidating the session on their current device. This feature is typically utilized when a user is changing or updating their password and you would like to invalidate sessions on other devices while keeping the current device authenticated.
+
+Before getting started, you should make sure that the Illuminate\Session\Middleware\AuthenticateSession middleware is present and un-commented in your App\Http\Kernel class' web middleware group:
+```
+'web' => [
+    // ...
+    \Illuminate\Session\Middleware\AuthenticateSession::class,
+    // ...
+],
+```
+Then, you may use the logoutOtherDevices method provided by the Auth facade. This method requires the user to confirm their current password, which your application should accept through an input form:
+```
+use Illuminate\Support\Facades\Auth;
+ 
+Auth::logoutOtherDevices($currentPassword);
+When the logoutOtherDevices method is invoked, the user's other sessions will be invalidated entirely, meaning they will be "logged out" of all guards they were previously authenticated by.
+```
+
+### Authorization
+
+#### Introduction
+In addition to providing built-in authentication services, Laravel also provides a simple way to authorize user actions against a given resource. For example, even though a user is authenticated, they may not be authorized to update or delete certain Eloquent models or database records managed by your application. Laravel's authorization features provide an easy, organized way of managing these types of authorization checks.
+
+Laravel provides two primary ways of authorizing actions: gates and policies. Think of gates and policies like routes and controllers. Gates provide a simple, closure-based approach to authorization while policies, like controllers, group logic around a particular model or resource. In this documentation, we'll explore gates first and then examine policies.
+
+You do not need to choose between exclusively using gates or exclusively using policies when building an application. Most applications will most likely contain some mixture of gates and policies, and that is perfectly fine! Gates are most applicable to actions that are not related to any model or resource, such as viewing an administrator dashboard. In contrast, policies should be used when you wish to authorize an action for a particular model or resource.
+
+### Gates
+#### Writing Gates
+
+Gates are a great way to learn the basics of Laravel's authorization features; however, when building robust Laravel applications you should consider using policies to organize your authorization rules.
+
+Gates are simply closures that determine if a user is authorized to perform a given action. Typically, gates are defined within the boot method of the``` App\Providers\AuthServiceProvider ```class using the Gate facade. Gates always receive a user instance as their first argument and may optionally receive additional arguments such as a relevant Eloquent model.
+
+
+Gates are simply closures that determine if a user is authorized to perform a given action. Typically, gates are defined within the boot method of the App\Providers\AuthServiceProvider class using the Gate facade. Gates always receive a user instance as their first argument and may optionally receive additional arguments such as a relevant Eloquent model.
+
+In this example, we'll define a gate to determine if a user can update a given App\Models\Post model. The gate will accomplish this by comparing the user's id against the user_id of the user that created the post:
+```
+use App\Models\Post;
+use App\Models\User;
+use Illuminate\Support\Facades\Gate;
+ 
+/**
+ * Register any authentication / authorization services.
+ *
+ * @return void
+ */
+public function boot()
+{
+    $this->registerPolicies();
+ 
+    Gate::define('update-post', function (User $user, Post $post) {
+        return $user->id === $post->user_id;
+    });
+}
+```
+
+#### Creating Policies
+
+##### Generating Policies
+
+Policies are classes that organize authorization logic around a particular model or resource. For example, if your application is a blog, you may have a App\Models\Post model and a corresponding App\Policies\PostPolicy to authorize user actions such as creating or updating posts.
+
+You may generate a policy using the make:policy Artisan command. The generated policy will be placed in the app/Policies directory. If this directory does not exist in your application, Laravel will create it for you:
+
+```
+php artisan make:policy PostPolicy
+```
+
+The make:policy command will generate an empty policy class. If you would like to generate a class with example policy methods related to viewing, creating, updating, and deleting the resource, you may provide a --model option when executing the command:
+```
+php artisan make:policy PostPolicy --model=Post
+```
+
+#### Policy Methods
+Once the policy class has been registered, you may add methods for each action it authorizes. For example, let's define an update method on our PostPolicy which determines if a given App\Models\User can update a given App\Models\Post instance.
+
+The update method will receive a User and a Post instance as its arguments, and should return true or false indicating whether the user is authorized to update the given Post. So, in this example, we will verify that the user's id matches the user_id on the post:
+```
+<?php
+ 
+namespace App\Policies;
+ 
+use App\Models\Post;
+use App\Models\User;
+ 
+class PostPolicy
+{
+    /**
+     * Determine if the given post can be updated by the user.
+     *
+     * @param  \App\Models\User  $user
+     * @param  \App\Models\Post  $post
+     * @return bool
+     */
+    public function update(User $user, Post $post)
+    {
+        return $user->id === $post->user_id;
+    }
+}
+
+```
+
+
+### Encryption
+
+#### Introduction
+Laravel's encryption services provide a simple, convenient interface for encrypting and decrypting text via OpenSSL using AES-256 and AES-128 encryption. All of Laravel's encrypted values are signed using a message authentication code (MAC) so that their underlying value can not be modified or tampered with once encrypted.
+
+#### Configuration
+Before using Laravel's encrypter, you must set the key configuration option in your config/app.php configuration file. This configuration value is driven by the APP_KEY environment variable. You should use the php artisan key:generate command to generate this variable's value since the key:generate command will use PHP's secure random bytes generator to build a cryptographically secure key for your application. Typically, the value of the APP_KEY environment variable will be generated for you during Laravel's installation.
+
+##### Encrypting A Value
+You may encrypt a value using the encryptString method provided by the Crypt facade. All encrypted values are encrypted using OpenSSL and the AES-256-CBC cipher. Furthermore, all encrypted values are signed with a message authentication code (MAC). The integrated message authentication code will prevent the decryption of any values that have been tampered with by malicious users:
+```
+ $name ="dhiraj";
+    $Encryptname = Crypt::encryptString($name);
+    echo $name."<br>";
+     echo $Encryptname."<br>";
+
+```
+
+##### Decrypting A Value
+You may decrypt values using the decryptString method provided by the Crypt facade. If the value can not be properly decrypted, such as when the message authentication code is invalid, an Illuminate\Contracts\Encryption\DecryptException will be thrown:
+
+
+```
+ $decryName = Crypt::decryptString($Encryptname);
+echo $decryName;
+```
+
+### Hashing
+
+#### Introduction
+The Laravel Hash facade provides secure Bcrypt and Argon2 hashing for storing user passwords. If you are using one of the Laravel application starter kits, Bcrypt will be used for registration and authentication by default.
+
+Bcrypt is a great choice for hashing passwords because its "work factor" is adjustable, which means that the time it takes to generate a hash can be increased as hardware power increases. When hashing passwords, slow is good. The longer an algorithm takes to hash a password, the longer it takes malicious users to generate "rainbow tables" of all possible string hash values that may be used in brute force attacks against applications.
+
+#### Configuration
+The default hashing driver for your application is configured in your application's config/hashing.php configuration file. There are currently several supported drivers: Bcrypt and Argon2 (Argon2i and Argon2id variants).
+
+##### Basic Usage
+###### Hashing Passwords
+You may hash a password by calling the make method on the Hash facade:
+```
+<?php
+ 
+namespace App\Http\Controllers;
+ 
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+ 
+class PasswordController extends Controller
+{
+    /**
+     * Update the password for the user.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function update(Request $request)
+    {
+        // Validate the new password length...
+ 
+        $request->user()->fill([
+            'password' => Hash::make($request->newPassword)
+        ])->save();
+    }
+}
+```
+
+##### Adjusting The Bcrypt Work Factor
+If you are using the Bcrypt algorithm, the make method allows you to manage the work factor of the algorithm using the rounds option; however, the default work factor managed by Laravel is acceptable for most applications:
+```
+$hashed = Hash::make('password', [
+    'rounds' => 12,
+]);
+```
+##### Adjusting The Argon2 Work Factor
+If you are using the Argon2 algorithm, the make method allows you to manage the work factor of the algorithm using the memory, time, and threads options; however, the default values managed by Laravel are acceptable for most applications:
+```
+$hashed = Hash::make('password', [
+    'memory' => 1024,
+    'time' => 2,
+    'threads' => 2,
+]);
+```
+
+#### Verifying That A Password Matches A Hash
+The check method provided by the Hash facade allows you to verify that a given plain-text string corresponds to a given hash:
+```
+if (Hash::check('plain-text', $hashedPassword)) {
+    // The passwords match...
+}
+```
+
+#### Determining If A Password Needs To Be Rehashed
+The needsRehash method provided by the Hash facade allows you to determine if the work factor used by the hasher has changed since the password was hashed. Some applications choose to perform this check during the application's authentication process:
+```
+if (Hash::needsRehash($hashed)) {
+    $hashed = Hash::make('plain-text');
+}
+```
+
+### Resetting Passwords
+
+#### Introduction
+Most web applications provide a way for users to reset their forgotten passwords. Rather than forcing you to re-implement this by hand for every application you create, Laravel provides convenient services for sending password reset links and secure resetting passwords.
+
