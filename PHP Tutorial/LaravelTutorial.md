@@ -5862,3 +5862,1433 @@ if (Hash::needsRehash($hashed)) {
 #### Introduction
 Most web applications provide a way for users to reset their forgotten passwords. Rather than forcing you to re-implement this by hand for every application you create, Laravel provides convenient services for sending password reset links and secure resetting passwords.
 
+
+
+## Database
+
+### Database: Getting Started
+
+#### Introduction
+Almost every modern web application interacts with a database. Laravel makes interacting with databases extremely simple across a variety of supported databases using raw SQL, a fluent query builder, and the Eloquent ORM. Currently, Laravel provides first-party support for five databases:
+
+MariaDB 10.2+ (Version Policy)
+MySQL 5.7+ (Version Policy)
+PostgreSQL 9.6+ (Version Policy)
+SQLite 3.8.8+
+SQL Server 2017+ (Version Policy)
+
+#### Configuration
+The configuration for Laravel's database services is located in your application's config/database.php configuration file
+In this file, you may define all of your database connections, as well as specify which connection should be used by default. Most of the configuration options within this file are driven by the values of your application's environment variables. Examples for most of Laravel's supported database systems are provided in this file.
+
+#### Running SQL Queries
+Once you have configured your database connection, you may run queries using the DB facade. The DB facade provides methods for each type of query: select, update, insert, delete, and statement.
+
+##### Running A Select Query
+To run a basic SELECT query, you may use the select method on the DB facade:
+```
+<?php
+ 
+namespace App\Http\Controllers;
+ 
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\DB;
+ 
+class UserController extends Controller
+{
+    /**
+     * Show a list of all of the application's users.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function index()
+    {
+        $users = DB::select('select * from users where active = ?', [1]);
+ 
+        return view('user.index', ['users' => $users]);
+    }
+}
+```
+
+#### Using Named Bindings
+Instead of using ? to represent your parameter bindings, you may execute a query using named bindings:
+```
+$results = DB::select('select * from users where id = :id', ['id' => 1]);
+```
+##### Running An Insert Statement
+To execute an insert statement, you may use the insert method on the DB facade. Like select, this method accepts the SQL query as its first argument and bindings as its second argument:
+```
+use Illuminate\Support\Facades\DB;
+ 
+DB::insert('insert into users (id, name) values (?, ?)', [1, 'Marc']);
+```
+#### Running An Update Statement
+The update method should be used to update existing records in the database. The number of rows affected by the statement is returned by the method:
+```
+use Illuminate\Support\Facades\DB;
+ 
+$affected = DB::update(
+    'update users set votes = 100 where name = ?',
+    ['Anita']
+);
+```
+#### Running A Delete Statement
+The delete method should be used to delete records from the database. Like update, the number of rows affected will be returned by the method:
+```
+use Illuminate\Support\Facades\DB;
+ 
+$deleted = DB::delete('delete from users');
+```
+
+#### Running A General Statement
+Some database statements do not return any value. For these types of operations, you may use the statement method on the DB facade:
+```
+DB::statement('drop table users');
+```
+
+#### Running An Unprepared Statement
+Sometimes you may want to execute an SQL statement without binding any values. You may use the DB facade's unprepared method to accomplish this:
+```
+DB::unprepared('update users set votes = 100 where name = "Dries"');
+```
+
+Since unprepared statements do not bind parameters, they may be vulnerable to SQL injection. You should never allow user controlled values within an unprepared statement.
+
+### Database: Query Builder
+
+#### Introduction
+Laravel's database query builder provides a convenient, fluent interface to creating and running database queries. It can be used to perform most database operations in your application and works perfectly with all of Laravel's supported database systems.
+
+The Laravel query builder uses PDO parameter binding to protect your application against SQL injection attacks. There is no need to clean or sanitize strings passed to the query builder as query bindings.
+
+
+PDO does not support binding column names. Therefore, you should never allow user input to dictate the column names referenced by your queries, including "order by" columns.
+
+#### Running Database Queries
+
+##### Running Database Queries
+Retrieving All Rows From A Table
+You may use the table method provided by the DB facade to begin a query. The table method returns a fluent query builder instance for the given table, allowing you to chain more constraints onto the query and then finally retrieve the results of the query using the get method:
+```
+<?php
+ 
+namespace App\Http\Controllers;
+ 
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\DB;
+ 
+class UserController extends Controller
+{
+    /**
+     * Show a list of all of the application's users.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function index()
+    {
+        $users = DB::table('users')->get();
+ 
+        return view('user.index', ['users' => $users]);
+    }
+}
+```
+
+The get method returns an Illuminate\Support\Collection instance containing the results of the query where each result is an instance of the PHP stdClass object. You may access each column's value by accessing the column as a property of the object:
+```
+use Illuminate\Support\Facades\DB;
+ 
+$users = DB::table('users')->get();
+ 
+foreach ($users as $user) {
+    echo $user->name;
+}
+
+```
+
+Retrieving A Single Row / Column From A Table
+If you just need to retrieve a single row from a database table, you may use the DB facade's first method. This method will return a single stdClass object:
+```
+$user = DB::table('users')->where('name', 'John')->first();
+ 
+return $user->email;
+```
+
+If you don't need an entire row, you may extract a single value from a record using the value method. This method will return the value of the column directly:
+```
+$email = DB::table('users')->where('name', 'John')->value('email');
+To retrieve a single row by its id column value, use the find method:
+
+$user = DB::table('users')->find(3);
+```
+
+##### Chunking Results
+If you need to work with thousands of database records, consider using the chunk method provided by the DB facade. This method retrieves a small chunk of results at a time and feeds each chunk into a closure for processing. For example, let's retrieve the entire users table in chunks of 100 records at a time:
+```
+use Illuminate\Support\Facades\DB;
+ 
+DB::table('users')->orderBy('id')->chunk(100, function ($users) {
+    foreach ($users as $user) {
+        //
+    }
+});
+You may stop further chunks from being processed by returning false from the closure:
+
+DB::table('users')->orderBy('id')->chunk(100, function ($users) {
+    // Process the records...
+ 
+    return false;
+});
+```
+
+#### Aggregates
+The query builder also provides a variety of methods for retrieving aggregate values like count, max, min, avg, and sum. You may call any of these methods after constructing your query:
+```
+use Illuminate\Support\Facades\DB;
+ 
+$users = DB::table('users')->count();
+ 
+$price = DB::table('orders')->max('price');
+Of course, you may combine these methods with other clauses to fine-tune how your aggregate value is calculated:
+
+$price = DB::table('orders')
+                ->where('finalized', 1)
+                ->avg('price');
+```
+
+
+#### Determining If Records Exist
+Instead of using the count method to determine if any records exist that match your query's constraints, you may use the exists and doesntExist methods:
+```
+if (DB::table('orders')->where('finalized', 1)->exists()) {
+    // ...
+}
+ 
+if (DB::table('orders')->where('finalized', 1)->doesntExist()) {
+    // ...
+}
+
+```
+
+#### Select Statements
+Specifying A Select Clause
+You may not always want to select all columns from a database table. Using the select method, you can specify a custom "select" clause for the query:
+```
+use Illuminate\Support\Facades\DB;
+ 
+$users = DB::table('users')
+            ->select('name', 'email as user_email')
+            ->get();
+The distinct method allows you to force the query to return distinct results:
+
+$users = DB::table('users')->distinct()->get();
+If you already have a query builder instance and you wish to add a column to its existing select clause, you may use the addSelect method:
+
+$query = DB::table('users')->select('name');
+ 
+$users = $query->addSelect('age')->get();
+
+```
+
+#### Joins
+##### Inner Join Clause
+The query builder may also be used to add join clauses to your queries. To perform a basic "inner join", you may use the join method on a query builder instance. The first argument passed to the join method is the name of the table you need to join to, while the remaining arguments specify the column constraints for the join. You may even join multiple tables in a single query:
+
+```
+use Illuminate\Support\Facades\DB;
+ 
+$users = DB::table('users')
+            ->join('contacts', 'users.id', '=', 'contacts.user_id')
+            ->join('orders', 'users.id', '=', 'orders.user_id')
+            ->select('users.*', 'contacts.phone', 'orders.price')
+            ->get();
+
+```
+
+Left Join / Right Join Clause
+If you would like to perform a "left join" or "right join" instead of an "inner join", use the leftJoin or rightJoin methods. These methods have the same signature as the join method:
+```
+$users = DB::table('users')
+            ->leftJoin('posts', 'users.id', '=', 'posts.user_id')
+            ->get();
+ 
+$users = DB::table('users')
+            ->rightJoin('posts', 'users.id', '=', 'posts.user_id')
+            ->get();
+
+```
+
+#### Basic Where Clauses
+##### Where Clauses
+You may use the query builder's where method to add "where" clauses to the query. The most basic call to the where method requires three arguments. The first argument is the name of the column. The second argument is an operator, which can be any of the database's supported operators. The third argument is the value to compare against the column's value.
+
+For example, the following query retrieves users where the value of the votes column is equal to 100 and the value of the age column is greater than 35:
+```
+$users = DB::table('users')
+                ->where('votes', '=', 100)
+                ->where('age', '>', 35)
+                ->get();
+
+```
+
+For convenience, if you want to verify that a column is = to a given value, you may pass the value as the second argument to the where method. Laravel will assume you would like to use the = operator:
+```
+$users = DB::table('users')->where('votes', 100)->get();
+```
+
+As previously mentioned, you may use any operator that is supported by your database system:
+```
+$users = DB::table('users')
+                ->where('votes', '>=', 100)
+                ->get();
+ 
+$users = DB::table('users')
+                ->where('votes', '<>', 100)
+                ->get();
+ 
+$users = DB::table('users')
+                ->where('name', 'like', 'T%')
+                ->get();
+
+```
+You may also pass an array of conditions to the where function. Each element of the array should be an array containing the three arguments typically passed to the where method:
+```
+$users = DB::table('users')->where([
+    ['status', '=', '1'],
+    ['subscribed', '<>', '1'],
+])->get();
+```
+
+Or Where Clauses
+When chaining together calls to the query builder's where method, the "where" clauses will be joined together using the and operator. However, you may use the orWhere method to join a clause to the query using the or operator. The orWhere method accepts the same arguments as the where method:
+```
+$users = DB::table('users')
+                    ->where('votes', '>', 100)
+                    ->orWhere('name', 'John')
+                    ->get();
+
+```
+
+##### whereNotBetween / orWhereNotBetween
+
+The whereNotBetween method verifies that a column's value lies outside of two values:
+```
+$users = DB::table('users')
+                    ->whereNotBetween('votes', [1, 100])
+                    ->get();
+
+```                    
+###### whereIn / whereNotIn / orWhereIn / orWhereNotIn
+
+The whereIn method verifies that a given column's value is contained within the given array:
+```
+$users = DB::table('users')
+                    ->whereIn('id', [1, 2, 3])
+                    ->get();
+
+```
+
+##### The whereNotIn method verifies that the given column's value is not contained in the given array:
+```
+$users = DB::table('users')
+                    ->whereNotIn('id', [1, 2, 3])
+                    ->get();
+```
+
+If you are adding a large array of integer bindings to your query, the whereIntegerInRaw or whereIntegerNotInRaw methods may be used to greatly reduce your memory usage.
+
+###### whereNull / whereNotNull / orWhereNull / orWhereNotNull
+
+The whereNull method verifies that the value of the given column is NULL:
+```
+$users = DB::table('users')
+                ->whereNull('updated_at')
+                ->get();
+
+```                
+The whereNotNull method verifies that the column's value is not NULL:
+```
+$users = DB::table('users')
+                ->whereNotNull('updated_at')
+                ->get();
+```
+
+###### whereDate / whereMonth / whereDay / whereYear / whereTime
+
+The whereDate method may be used to compare a column's value against a date:
+```
+$users = DB::table('users')
+                ->whereDate('created_at', '2016-12-31')
+                ->get();
+
+```
+The whereMonth method may be used to compare a column's value against a specific month:
+```
+$users = DB::table('users')
+                ->whereMonth('created_at', '12')
+                ->get();
+```
+The whereDay method may be used to compare a column's value against a specific day of the month:
+```
+$users = DB::table('users')
+                ->whereDay('created_at', '31')
+                ->get();
+
+```
+The whereYear method may be used to compare a column's value against a specific year:
+```
+$users = DB::table('users')
+                ->whereYear('created_at', '2016')
+                ->get();
+```
+The whereTime method may be used to compare a column's value against a specific time:
+```
+$users = DB::table('users')
+                ->whereTime('created_at', '=', '11:20:45')
+                ->get();
+
+```
+
+##### whereColumn / orWhereColumn
+
+The whereColumn method may be used to verify that two columns are equal:
+```
+$users = DB::table('users')
+                ->whereColumn('first_name', 'last_name')
+                ->get();
+
+```
+You may also pass a comparison operator to the whereColumn method:
+```
+$users = DB::table('users')
+                ->whereColumn('updated_at', '>', 'created_at')
+                ->get();
+
+```  
+You may also pass an array of column comparisons to the whereColumn method. These conditions will be joined using the and operator:
+```
+$users = DB::table('users')
+                ->whereColumn([
+                    ['first_name', '=', 'last_name'],
+                    ['updated_at', '>', 'created_at'],
+                ])->get();
+
+```
+
+#### Ordering, Grouping, Limit & Offset
+
+##### Ordering
+The orderBy Method
+The orderBy method allows you to sort the results of the query by a given column. The first argument accepted by the orderBy method should be the column you wish to sort by, while the second argument determines the direction of the sort and may be either asc or desc:
+```
+$users = DB::table('users')
+                ->orderBy('name', 'desc')
+                ->get();
+
+```
+To sort by multiple columns, you may simply invoke orderBy as many times as necessary:
+```
+$users = DB::table('users')
+                ->orderBy('name', 'desc')
+                ->orderBy('email', 'asc')
+                ->get();
+```
+
+##### Random Ordering
+The inRandomOrder method may be used to sort the query results randomly. For example, you may use this method to fetch a random user:
+```
+$randomUser = DB::table('users')
+                ->inRandomOrder
+```
+
+##### Removing Existing Orderings
+The reorder method removes all of the "order by" clauses that have previously been applied to the query:
+```
+$query = DB::table('users')->orderBy('name');
+ 
+$unorderedUsers = $query->reorder()->get();
+```
+
+##### Grouping
+The groupBy & having Methods
+As you might expect, the groupBy and having methods may be used to group the query results. The having method's signature is similar to that of the where method:
+```
+$users = DB::table('users')
+                ->groupBy('account_id')
+                ->having('account_id', '>', 100)
+                ->get();
+
+```
+
+##### Limit & Offset
+The skip & take Methods
+You may use the skip and take methods to limit the number of results returned from the query or to skip a given number of results in the query:
+```
+$users = DB::table('users')->skip(10)->take(5)->get();
+```
+Alternatively, you may use the limit and offset methods. These methods are functionally equivalent to the take and skip methods, respectively:
+```
+$users = DB::table('users')
+                ->offset(10)
+                ->limit(5)
+                ->get();
+
+```
+
+##### Insert Statements
+The query builder also provides an insert method that may be used to insert records into the database table. The insert method accepts an array of column names and values:
+```
+DB::table('users')->insert([
+    'email' => 'kayla@example.com',
+    'votes' => 0
+]);
+
+```
+You may insert several records at once by passing an array of arrays. Each array represents a record that should be inserted into the table:
+```
+DB::table('users')->insert([
+    ['email' => 'picard@example.com', 'votes' => 0],
+    ['email' => 'janeway@example.com', 'votes' => 0],
+]);
+
+```
+
+The insertOrIgnore method will ignore errors while inserting records into the database:
+```
+DB::table('users')->insertOrIgnore([
+    ['id' => 1, 'email' => 'sisko@example.com'],
+    ['id' => 2, 'email' => 'archer@example.com'],
+]);
+
+```
+
+##### Update Statements
+In addition to inserting records into the database, the query builder can also update existing records using the update method. The update method, like the insert method, accepts an array of column and value pairs indicating the columns to be updated. The update method returns the number of affected rows. You may constrain the update query using where clauses:
+```
+$affected = DB::table('users')
+              ->where('id', 1)
+              ->update(['votes' => 1]);
+
+```
+
+#### Update Or Insert
+Sometimes you may want to update an existing record in the database or create it if no matching record exists. In this scenario, the updateOrInsert method may be used. The updateOrInsert method accepts two arguments: an array of conditions by which to find the record, and an array of column and value pairs indicating the columns to be updated.
+
+The updateOrInsert method will attempt to locate a matching database record using the first argument's column and value pairs. If the record exists, it will be updated with the values in the second argument. If the record can not be found, a new record will be inserted with the merged attributes of both arguments:
+```
+DB::table('users')
+    ->updateOrInsert(
+        ['email' => 'john@example.com', 'name' => 'John'],
+        ['votes' => '2']
+    );
+```
+
+#### Debugging
+You may use the dd and dump methods while building a query to dump the current query bindings and SQL. The dd method will display the debug information and then stop executing the request. The dump method will display the debug information but allow the request to continue executing:
+
+
+### Database: Migrations
+
+#### Introduction
+Migrations are like version control for your database, allowing your team to define and share the application's database schema definition. If you have ever had to tell a teammate to manually add a column to their local database schema after pulling in your changes from source control, you've faced the problem that database migrations solve.
+
+The Laravel Schema facade provides database agnostic support for creating and manipulating tables across all of Laravel's supported database systems. Typically, migrations will use this facade to create and modify database tables and columns.
+
+
+#### Generating Migrations
+You may use the make:migration Artisan command to generate a database migration. The new migration will be placed in your database/migrations directory. Each migration filename contains a timestamp that allows Laravel to determine the order of the migrations:
+```
+php artisan make:migration create_flights_table
+```
+
+#### Running Migrations
+To run all of your outstanding migrations, execute the migrate Artisan command:
+```
+php artisan migrate
+```
+If you would like to see which migrations have run thus far, you may use the migrate:status Artisan command:
+```
+php artisan migrate:status
+```
+
+##### Forcing Migrations To Run In Production
+Some migration operations are destructive, which means they may cause you to lose data. In order to protect you from running these commands against your production database, you will be prompted for confirmation before the commands are executed. To force the commands to run without a prompt, use the --force flag:
+```
+php artisan migrate --force
+```
+
+#### Rolling Back Migrations
+To roll back the latest migration operation, you may use the rollback Artisan command. This command rolls back the last "batch" of migrations, which may include multiple migration files:
+```
+php artisan migrate:rollback
+```
+
+You may roll back a limited number of migrations by providing the step option to the rollback command. For example, the following command will roll back the last five migrations:
+```
+php artisan migrate:rollback --step=5
+```
+The migrate:reset command will roll back all of your application's migrations:
+```
+php artisan migrate:reset
+```
+
+#### Roll Back & Migrate Using A Single Command
+The migrate:refresh command will roll back all of your migrations and then execute the migrate command. This command effectively re-creates your entire database:
+```
+php artisan migrate:refresh
+ ```
+#### Refresh the database and run all database seeds...
+```
+php artisan migrate:refresh --seed
+```
+
+#### Drop All Tables & Migrate
+The migrate:fresh command will drop all tables from the database and then execute the migrate command:
+
+php artisan migrate:fresh
+ 
+php artisan migrate:fresh --seed
+
+### Database: Seeding
+
+#### Introduction
+Laravel includes the ability to seed your database with data using seed classes. All seed classes are stored in the database/seeders directory. By default, a DatabaseSeeder class is defined for you. From this class, you may use the call method to run other seed classes, allowing you to control the seeding order.
+
+#### Writing Seeders
+To generate a seeder, execute the make:seeder Artisan command. All seeders generated by the framework will be placed in the database/seeders directory:
+```
+php artisan make:seeder UserSeeder
+```
+
+A seeder class only contains one method by default: run. This method is called when the db:seed Artisan command is executed. Within the run method, you may insert data into your database however you wish. You may use the query builder to manually insert data or you may use Eloquent model factories.
+
+As an example, let's modify the default DatabaseSeeder class and add a database insert statement to the run method:
+```
+<?php
+ 
+namespace Database\Seeders;
+ 
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
+ 
+class DatabaseSeeder extends Seeder
+{
+    /**
+     * Run the database seeders.
+     *
+     * @return void
+     */
+    public function run()
+    {
+        DB::table('users')->insert([
+            'name' => Str::random(10),
+            'email' => Str::random(10).'@gmail.com',
+            'password' => Hash::make('password'),
+        ]);
+    }
+}
+```
+
+#### Calling Additional Seeders
+Within the DatabaseSeeder class, you may use the call method to execute additional seed classes. Using the call method allows you to break up your database seeding into multiple files so that no single seeder class becomes too large. The call method accepts an array of seeder classes that should be executed:
+```
+/**
+ * Run the database seeders.
+ *
+ * @return void
+ */
+public function run()
+{
+    $this->call([
+        UserSeeder::class,
+        PostSeeder::class,
+        CommentSeeder::class,
+    ]);
+}
+```
+
+#### Running Seeders
+You may execute the db:seed Artisan command to seed your database. By default, the db:seed command runs the Database\Seeders\DatabaseSeeder class, which may in turn invoke other seed classes. However, you may use the --class option to specify a specific seeder class to run individually:
+```
+php artisan db:seed
+ 
+php artisan db:seed --class=UserSeeder
+```
+You may also seed your database using the migrate:fresh command in combination with the --seed option, which will drop all tables and re-run all of your migrations. This command is useful for completely re-building your database:
+```
+php artisan migrate:fresh --seed
+```
+
+##### Forcing Seeders To Run In Production
+Some seeding operations may cause you to alter or lose data. In order to protect you from running seeding commands against your production database, you will be prompted for confirmation before the seeders are executed in the production environment. To force the seeders to run without a prompt, use the --force flag:
+```
+php artisan db:seed --force
+```
+
+### Redis
+#### Introduction
+Redis is an open source, advanced key-value store. It is often referred to as a data structure server since keys can contain strings, hashes, lists, sets, and sorted sets.
+
+Before using Redis with Laravel, we encourage you to install and use the phpredis PHP extension via PECL. The extension is more complex to install compared to "user-land" PHP packages but may yield better performance for applications that make heavy use of Redis. If you are using Laravel Sail, this extension is already installed in your application's Docker container.
+
+If you are unable to install the phpredis extension, you may install the predis/predis package via Composer. Predis is a Redis client written entirely in PHP and does not require any additional extensions:
+
+composer require predis/predis
+
+### Eloquent
+
+#### Eloquent: Getting Started
+
+#### Introduction
+Laravel includes Eloquent, an object-relational mapper (ORM) that makes it enjoyable to interact with your database. When using Eloquent, each database table has a corresponding "Model" that is used to interact with that table. In addition to retrieving records from the database table, Eloquent models allow you to insert, update, and delete records from the table as well.
+
+#### Generating Model Classes
+To get started, let's create an Eloquent model. Models typically live in the app\Models directory and extend the Illuminate\Database\Eloquent\Model class. You may use the make:model Artisan command to generate a new model:
+```
+php artisan make:model Flight
+```
+
+If you would like to generate a database migration when you generate the model, you may use the --migration or -m option:
+```
+php artisan make:model Flight --migration
+```
+You may generate various other types of classes when generating a model, such as factories, seeders, policies, controllers, and form requests. In addition, these options may be combined to create multiple classes at once:
+
+```
+# Generate a model and a FlightFactory class...
+php artisan make:model Flight --factory
+php artisan make:model Flight -f
+ 
+# Generate a model and a FlightSeeder class...
+php artisan make:model Flight --seed
+php artisan make:model Flight -s
+ 
+# Generate a model and a FlightController class...
+php artisan make:model Flight --controller
+php artisan make:model Flight -c
+ 
+# Generate a model, FlightController resource class, and form request classes...
+php artisan make:model Flight --controller --resource --requests
+php artisan make:model Flight -crR
+ 
+# Generate a model and a FlightPolicy class...
+php artisan make:model Flight --policy
+ 
+# Generate a model and a migration, factory, seeder, and controller...
+php artisan make:model Flight -mfsc
+ 
+# Shortcut to generate a model, migration, factory, seeder, policy, controller, and form requests...
+php artisan make:model Flight --all
+ 
+# Generate a pivot model...
+php artisan make:model Member --pivot
+```
+
+#### Eloquent Model Conventions
+Models generated by the make:model command will be placed in the app/Models directory. Let's examine a basic model class and discuss some of Eloquent's key conventions:
+```
+<?php
+ 
+namespace App\Models;
+ 
+use Illuminate\Database\Eloquent\Model;
+ 
+class Flight extends Model
+{
+    //
+}
+
+```
+
+#### Retrieving Models
+Once you have created a model and its associated database table, you are ready to start retrieving data from your database. You can think of each Eloquent model as a powerful query builder allowing you to fluently query the database table associated with the model. The model's all method will retrieve all of the records from the model's associated database table:
+```
+use App\Models\Flight;
+ 
+foreach (Flight::all() as $flight) {
+    echo $flight->name;
+}
+```
+##### Building Queries
+The Eloquent all method will return all of the results in the model's table. However, since each Eloquent model serves as a query builder, you may add additional constraints to queries and then invoke the get method to retrieve the results:
+```
+$flights = Flight::where('active', 1)
+               ->orderBy('name')
+               ->take(10)
+               ->get();
+
+```
+
+##### Retrieving Single Models / Aggregates
+In addition to retrieving all of the records matching a given query, you may also retrieve single records using the find, first, or firstWhere methods. Instead of returning a collection of models, these methods return a single model instance:
+```
+use App\Models\Flight;
+ 
+// Retrieve a model by its primary key...
+$flight = Flight::find(1);
+ 
+// Retrieve the first model matching the query constraints...
+$flight = Flight::where('active', 1)->first();
+ 
+// Alternative to retrieving the first model matching the query constraints...
+$flight = Flight::firstWhere('active', 1);
+```
+
+
+#### Updates
+The save method may also be used to update models that already exist in the database. To update a model, you should retrieve it and set any attributes you wish to update. Then, you should call the model's save method. Again, the updated_at timestamp will automatically be updated, so there is no need to manually set its value:
+```
+use App\Models\Flight;
+ 
+$flight = Flight::find(1);
+ 
+$flight->name = 'Paris to London';
+ 
+$flight->save();
+```
+
+####  Mass Updates
+Updates can also be performed against models that match a given query. In this example, all flights that are active and have a destination of San Diego will be marked as delayed:
+```
+Flight::where('active', 1)
+      ->where('destination', 'San Diego')
+      ->update(['delayed' => 1]);
+The update method expects an array of column and value pairs representing the columns that should be updated. The update method returns the number of affected rows.
+
+```
+#### Mass Assignment
+You may use the create method to "save" a new model using a single PHP statement. The inserted model instance will be returned to you by the method:
+```
+use App\Models\Flight;
+ 
+$flight = Flight::create([
+    'name' => 'London to Paris',
+]);
+```
+
+However, before using the create method, you will need to specify either a fillable or guarded property on your model class. These properties are required because all Eloquent models are protected against mass assignment vulnerabilities by default.
+
+A mass assignment vulnerability occurs when a user passes an unexpected HTTP request field and that field changes a column in your database that you did not expect. For example, a malicious user might send an is_admin parameter through an HTTP request, which is then passed to your model's create method, allowing the user to escalate themselves to an administrator.
+
+So, to get started, you should define which model attributes you want to make mass assignable. You may do this using the $fillable property on the model. For example, let's make the name attribute of our Flight model mass assignable:
+```
+<?php
+ 
+namespace App\Models;
+ 
+use Illuminate\Database\Eloquent\Model;
+ 
+class Flight extends Model
+{
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array
+     */
+    protected $fillable = ['name'];
+}
+
+```
+
+#### Deleting Models
+To delete a model, you may call the delete method on the model instance:
+```
+use App\Models\Flight;
+ 
+$flight = Flight::find(1);
+ 
+$flight->delete();
+You may call the truncate method to delete all of the model's associated database records. The truncate operation will also reset any auto-incrementing IDs on the model's associated table:
+
+Flight::truncate();
+```
+
+#### Deleting Models Using Queries
+Of course, you may build an Eloquent query to delete all models matching your query's criteria. In this example, we will delete all flights that are marked as inactive. Like mass updates, mass deletes will not dispatch model events for the models that are deleted:
+```
+$deleted = Flight::where('active', 0)->delete();
+```
+
+When executing a mass delete statement via Eloquent, the deleting and deleted model events will not be dispatched for the deleted models. This is because the models are never actually retrieved when executing the delete statement.
+
+
+#### Soft Deleting
+In addition to actually removing records from your database, Eloquent can also "soft delete" models. When models are soft deleted, they are not actually removed from your database. Instead, a deleted_at attribute is set on the model indicating the date and time at which the model was "deleted". To enable soft deletes for a model, add the Illuminate\Database\Eloquent\SoftDeletes trait to the model:
+```
+<?php
+ 
+namespace App\Models;
+ 
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+ 
+class Flight extends Model
+{
+    use SoftDeletes;
+}
+```
+
+You should also add the deleted_at column to your database table. The Laravel schema builder contains a helper method to create this column:
+
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+ 
+Schema::table('flights', function (Blueprint $table) {
+    $table->softDeletes();
+});
+ 
+Schema::table('flights', function (Blueprint $table) {
+    $table->dropSoftDeletes();
+});
+
+
+Now, when you call the delete method on the model, the deleted_at column will be set to the current date and time. However, the model's database record will be left in the table. When querying a model that uses soft deletes, the soft deleted models will automatically be excluded from all query results.
+
+To determine if a given model instance has been soft deleted, you may use the trashed method:
+```
+if ($flight->trashed()) {
+    //
+}
+```
+
+#### Restoring Soft Deleted Models
+Sometimes you may wish to "un-delete" a soft deleted model. To restore a soft deleted model, you may call the restore method on a model instance. The restore method will set the model's deleted_at column to null:
+```
+$flight->restore();
+```
+You may also use the restore method in a query to restore multiple models. Again, like other "mass" operations, this will not dispatch any model events for the models that are restored:
+```
+Flight::withTrashed()
+        ->where('airline_id', 1)
+        ->restore();
+
+```
+
+##### Permanently Deleting Models
+Sometimes you may need to truly remove a model from your database. You may use the forceDelete method to permanently remove a soft deleted model from the database table:
+```
+$flight->forceDelete();
+
+```
+### Eloquent: Relationships
+#### Introduction
+Database tables are often related to one another. For example, a blog post may have many comments or an order could be related to the user who placed it. Eloquent makes managing and working with these relationships easy, and supports a variety of common relationships:
+```
+One To One
+One To Many
+Many To Many
+Has One Through
+Has Many Through
+One To One (Polymorphic)
+One To Many (Polymorphic)
+Many To Many (Polymorphic)
+```
+#### Defining Relationships
+Eloquent relationships are defined as methods on your Eloquent model classes. Since relationships also serve as powerful query builders, defining relationships as methods provides powerful method chaining and querying capabilities. For example, we may chain additional query constraints on this posts relationship:
+```
+$user->posts()->where('active', 1)->get();
+```
+But, before diving too deep into using relationships, let's learn how to define each type of relationship supported by Eloquent.
+
+
+##### One To One
+A one-to-one relationship is a very basic type of database relationship. For example, a User model might be associated with one Phone model. To define this relationship, we will place a phone method on the User model. The phone method should call the hasOne method and return its result. The hasOne method is available to your model via the model's Illuminate\Database\Eloquent\Model base class:
+```
+<?php
+ 
+namespace App\Models;
+ 
+use Illuminate\Database\Eloquent\Model;
+ 
+class User extends Model
+{
+    /**
+     * Get the phone associated with the user.
+     */
+    public function phone()
+    {
+        return $this->hasOne(Phone::class);
+    }
+}
+```
+The first argument passed to the hasOne method is the name of the related model class. Once the relationship is defined, we may retrieve the related record using Eloquent's dynamic properties. Dynamic properties allow you to access relationship methods as if they were properties defined on the model:
+```
+$phone = User::find(1)->phone;
+```
+
+
+Eloquent determines the foreign key of the relationship based on the parent model name. In this case, the Phone model is automatically assumed to have a user_id foreign key. If you wish to override this convention, you may pass a second argument to the hasOne method:
+```
+return $this->hasOne(Phone::class, 'foreign_key');
+```
+Additionally, Eloquent assumes that the foreign key should have a value matching the primary key column of the parent. In other words, Eloquent will look for the value of the user's id column in the user_id column of the Phone record. If you would like the relationship to use a primary key value other than id or your model's $primaryKey property, you may pass a third argument to the hasOne method:
+```
+return $this->hasOne(Phone::class, 'foreign_key', 'local_key');
+```
+
+##### Defining The Inverse Of The Relationship
+So, we can access the Phone model from our User model. Next, let's define a relationship on the Phone model that will let us access the user that owns the phone. We can define the inverse of a hasOne relationship using the belongsTo method:
+```
+<?php
+ 
+namespace App\Models;
+ 
+use Illuminate\Database\Eloquent\Model;
+ 
+class Phone extends Model
+{
+    /**
+     * Get the user that owns the phone.
+     */
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+}
+```
+When invoking the user method, Eloquent will attempt to find a User model that has an id which matches the user_id column on the Phone model.
+
+Eloquent determines the foreign key name by examining the name of the relationship method and suffixing the method name with _id. So, in this case, Eloquent assumes that the Phone model has a user_id column. However, if the foreign key on the Phone model is not user_id, you may pass a custom key name as the second argument to the belongsTo method:
+```
+/**
+ * Get the user that owns the phone.
+ */
+public function user()
+{
+    return $this->belongsTo(User::class, 'foreign_key');
+}
+```
+If the parent model does not use id as its primary key, or you wish to find the associated model using a different column, you may pass a third argument to the belongsTo method specifying the parent table's custom key:
+```
+/**
+ * Get the user that owns the phone.
+ */
+public function user()
+{
+    return $this->belongsTo(User::class, 'foreign_key', 'owner_key');
+}
+```
+
+#### One To Many
+A one-to-many relationship is used to define relationships where a single model is the parent to one or more child models. For example, a blog post may have an infinite number of comments. Like all other Eloquent relationships, one-to-many relationships are defined by defining a method on your Eloquent model:
+```
+<?php
+ 
+namespace App\Models;
+ 
+use Illuminate\Database\Eloquent\Model;
+ 
+class Post extends Model
+{
+    /**
+     * Get the comments for the blog post.
+     */
+    public function comments()
+    {
+        return $this->hasMany(Comment::class);
+    }
+}
+```
+
+Remember, Eloquent will automatically determine the proper foreign key column for the Comment model. By convention, Eloquent will take the "snake case" name of the parent model and suffix it with _id. So, in this example, Eloquent will assume the foreign key column on the Comment model is post_id.
+
+
+Once the relationship method has been defined, we can access the collection of related comments by accessing the comments property. Remember, since Eloquent provides "dynamic relationship properties", we can access relationship methods as if they were defined as properties on the model:
+
+```
+use App\Models\Post;
+ 
+$comments = Post::find(1)->comments;
+ 
+foreach ($comments as $comment) {
+    //
+}
+```
+Since all relationships also serve as query builders, you may add further constraints to the relationship query by calling the comments method and continuing to chain conditions onto the query:
+```
+$comment = Post::find(1)->comments()
+                    ->where('title', 'foo')
+                    ->first();
+
+```
+Like the hasOne method, you may also override the foreign and local keys by passing additional arguments to the hasMany method:
+```
+return $this->hasMany(Comment::class, 'foreign_key');
+ 
+return $this->hasMany(Comment::class, 'foreign_key', 'local_key');
+```
+
+#### One To Many (Inverse) / Belongs To
+Now that we can access all of a post's comments, let's define a relationship to allow a comment to access its parent post. To define the inverse of a hasMany relationship, define a relationship method on the child model which calls the belongsTo method:
+```
+<?php
+ 
+namespace App\Models;
+ 
+use Illuminate\Database\Eloquent\Model;
+ 
+class Comment extends Model
+{
+    /**
+     * Get the post that owns the comment.
+     */
+    public function post()
+    {
+        return $this->belongsTo(Post::class);
+    }
+}
+```
+Once the relationship has been defined, we can retrieve a comment's parent post by accessing the post "dynamic relationship property":
+```
+use App\Models\Comment;
+ 
+$comment = Comment::find(1);
+ 
+return $comment->post->title;
+```
+In the example above, Eloquent will attempt to find a Post model that has an id which matches the post_id column on the Comment model.
+
+Eloquent determines the default foreign key name by examining the name of the relationship method and suffixing the method name with a _ followed by the name of the parent model's primary key column. So, in this example, Eloquent will assume the Post model's foreign key on the comments table is post_id.
+
+However, if the foreign key for your relationship does not follow these conventions, you may pass a custom foreign key name as the second argument to the belongsTo method:
+
+```
+/**
+ * Get the post that owns the comment.
+ */
+public function post()
+{
+    return $this->belongsTo(Post::class, 'foreign_key');
+}
+```
+If your parent model does not use id as its primary key, or you wish to find the associated model using a different column, you may pass a third argument to the belongsTo method specifying your parent table's custom key:
+```
+/**
+ * Get the post that owns the comment.
+ */
+public function post()
+{
+    return $this->belongsTo(Post::class, 'foreign_key', 'owner_key');
+}
+```
+##### Default Models
+The belongsTo, hasOne, hasOneThrough, and morphOne relationships allow you to define a default model that will be returned if the given relationship is null. This pattern is often referred to as the Null Object pattern and can help remove conditional checks in your code. In the following example, the user relation will return an empty App\Models\User model if no user is attached to the Post model:
+```
+/**
+ * Get the author of the post.
+ */
+public function user()
+{
+    return $this->belongsTo(User::class)->withDefault();
+}
+```
+To populate the default model with attributes, you may pass an array or closure to the withDefault method:
+```
+/**
+ * Get the author of the post.
+ */
+public function user()
+{
+    return $this->belongsTo(User::class)->withDefault([
+        'name' => 'Guest Author',
+    ]);
+}
+ 
+/**
+ * Get the author of the post.
+ */
+public function user()
+{
+    return $this->belongsTo(User::class)->withDefault(function ($user, $post) {
+        $user->name = 'Guest Author';
+    });
+}
+```
+#### Has One Of Many
+Sometimes a model may have many related models, yet you want to easily retrieve the "latest" or "oldest" related model of the relationship. For example, a User model may be related to many Order models, but you want to define a convenient way to interact with the most recent order the user has placed. You may accomplish this using the hasOne relationship type combined with the ofMany methods:
+```
+/**
+ * Get the user's most recent order.
+ */
+public function latestOrder()
+{
+    return $this->hasOne(Order::class)->latestOfMany();
+}
+```
+Likewise, you may define a method to retrieve the "oldest", or first, related model of a relationship:
+```
+/**
+ * Get the user's oldest order.
+ */
+public function oldestOrder()
+{
+    return $this->hasOne(Order::class)->oldestOfMany();
+}
+```
+By default, the latestOfMany and oldestOfMany methods will retrieve the latest or oldest related model based on the model's primary key, which must be sortable. However, sometimes you may wish to retrieve a single model from a larger relationship using a different sorting criteria.
+
+For example, using the ofMany method, you may retrieve the user's most expensive order. The ofMany method accepts the sortable column as its first argument and which aggregate function (min or max) to apply when querying for the related model:
+```
+/**
+ * Get the user's largest order.
+ */
+public function largestOrder()
+{
+    return $this->hasOne(Order::class)->ofMany('price', 'max');
+}
+```
+
+#### Has One Of Many
+Sometimes a model may have many related models, yet you want to easily retrieve the "latest" or "oldest" related model of the relationship. For example, a User model may be related to many Order models, but you want to define a convenient way to interact with the most recent order the user has placed. You may accomplish this using the hasOne relationship type combined with the ofMany methods:
+```
+/**
+ * Get the user's most recent order.
+ */
+public function latestOrder()
+{
+    return $this->hasOne(Order::class)->latestOfMany();
+}
+```
+Likewise, you may define a method to retrieve the "oldest", or first, related model of a relationship:
+```
+/**
+ * Get the user's oldest order.
+ */
+public function oldestOrder()
+{
+    return $this->hasOne(Order::class)->oldestOfMany();
+}
+```
+By default, the latestOfMany and oldestOfMany methods will retrieve the latest or oldest related model based on the model's primary key, which must be sortable. However, sometimes you may wish to retrieve a single model from a larger relationship using a different sorting criteria.
+
+For example, using the ofMany method, you may retrieve the user's most expensive order. The ofMany method accepts the sortable column as its first argument and which aggregate function (min or max) to apply when querying for the related model:
+```
+/**
+ * Get the user's largest order.
+ */
+public function largestOrder()
+{
+    return $this->hasOne(Order::class)->ofMany('price', 'max');
+}
+```
+
+#### Has One Through
+The "has-one-through" relationship defines a one-to-one relationship with another model. However, this relationship indicates that the declaring model can be matched with one instance of another model by proceeding through a third model.
+
+For example, in a vehicle repair shop application, each Mechanic model may be associated with one Car model, and each Car model may be associated with one Owner model. While the mechanic and the owner have no direct relationship within the database, the mechanic can access the owner through the Car model. Let's look at the tables necessary to define this relationship:
+```
+mechanics
+    id - integer
+    name - string
+ 
+cars
+    id - integer
+    model - string
+    mechanic_id - integer
+ 
+owners
+    id - integer
+    name - string
+    car_id - integer
+```    
+Now that we have examined the table structure for the relationship, let's define the relationship on the Mechanic model:
+```
+<?php
+ 
+namespace App\Models;
+ 
+use Illuminate\Database\Eloquent\Model;
+ 
+class Mechanic extends Model
+{
+    /**
+     * Get the car's owner.
+     */
+    public function carOwner()
+    {
+        return $this->hasOneThrough(Owner::class, Car::class);
+    }
+}
+```
+The first argument passed to the hasOneThrough method is the name of the final model we wish to access, while the second argument is the name of the intermediate model.
+
+#### Key Conventions
+Typical Eloquent foreign key conventions will be used when performing the relationship's queries. If you would like to customize the keys of the relationship, you may pass them as the third and fourth arguments to the hasOneThrough method. The third argument is the name of the foreign key on the intermediate model. The fourth argument is the name of the foreign key on the final model. The fifth argument is the local key, while the sixth argument is the local key of the intermediate model:
+```
+class Mechanic extends Model
+{
+    /**
+     * Get the car's owner.
+     */
+    public function carOwner()
+    {
+        return $this->hasOneThrough(
+            Owner::class,
+            Car::class,
+            'mechanic_id', // Foreign key on the cars table...
+            'car_id', // Foreign key on the owners table...
+            'id', // Local key on the mechanics table...
+            'id' // Local key on the cars table...
+        );
+    }
+}
+```
+#### Has Many Through
+The "has-many-through" relationship provides a convenient way to access distant relations via an intermediate relation. For example, let's assume we are building a deployment platform like Laravel Vapor. A Project model might access many Deployment models through an intermediate Environment model. Using this example, you could easily gather all deployments for a given project. Let's look at the tables required to define this relationship:
+```
+projects
+    id - integer
+    name - string
+ 
+environments
+    id - integer
+    project_id - integer
+    name - string
+ 
+deployments
+    id - integer
+    environment_id - integer
+    commit_hash - string
+
+```
+Now that we have examined the table structure for the relationship, let's define the relationship on the Project model:
+```
+<?php
+ 
+namespace App\Models;
+ 
+use Illuminate\Database\Eloquent\Model;
+ 
+class Project extends Model
+{
+    /**
+     * Get all of the deployments for the project.
+     */
+    public function deployments()
+    {
+        return $this->hasManyThrough(Deployment::class, Environment::class);
+    }
+}
+```
+The first argument passed to the hasManyThrough method is the name of the final model we wish to access, while the second argument is the name of the intermediate model.
+
+Though the Deployment model's table does not contain a project_id column, the hasManyThrough relation provides access to a project's deployments via $project->deployments. To retrieve these models, Eloquent inspects the project_id column on the intermediate Environment model's table. After finding the relevant environment IDs, they are used to query the Deployment model's table.
+
+##### Key Conventions
+Typical Eloquent foreign key conventions will be used when performing the relationship's queries. If you would like to customize the keys of the relationship, you may pass them as the third and fourth arguments to the hasManyThrough method. The third argument is the name of the foreign key on the intermediate model. The fourth argument is the name of the foreign key on the final model. The fifth argument is the local key, while the sixth argument is the local key of the intermediate model:
+
+```
+class Project extends Model
+{
+    public function deployments()
+    {
+        return $this->hasManyThrough(
+            Deployment::class,
+            Environment::class,
+            'project_id', // Foreign key on the environments table...
+            'environment_id', // Foreign key on the deployments table...
+            'id', // Local key on the projects table...
+            'id' // Local key on the environments table...
+        );
+    }
+}
+
+```
+#### Many To Many Relationships
+Many-to-many relations are slightly more complicated than hasOne and hasMany relationships. An example of a many-to-many relationship is a user that has many roles and those roles are also shared by other users in the application. For example, a user may be assigned the role of "Author" and "Editor"; however, those roles may also be assigned to other users as well. So, a user has many roles and a role has many users.
+
+Model Structure
+Many-to-many relationships are defined by writing a method that returns the result of the belongsToMany method. The belongsToMany method is provided by the Illuminate\Database\Eloquent\Model base class that is used by all of your application's Eloquent models. For example, let's define a roles method on our User model. The first argument passed to this method is the name of the related model class:
+```
+<?php
+ 
+namespace App\Models;
+ 
+use Illuminate\Database\Eloquent\Model;
+ 
+class User extends Model
+{
+    /**
+     * The roles that belong to the user.
+     */
+    public function roles()
+    {
+        return $this->belongsToMany(Role::class);
+    }
+}
+```
+
+if You want to fillter data inside a relation then we can do this by using add callback function inside function .
+see follow 
+```
+$allDetails =  PostPhotos::orderBy('created_at','DESC')->with(['postcomment' =>function($q) use ($id){
+        $q->where('id' , 1);
+    } ])
+    ->get();
+```    
+
+#### Eloquent: Collections
+
+#### Introduction
+All Eloquent methods that return more than one model result will return instances of the Illuminate\Database\Eloquent\Collection class, including results retrieved via the get method or accessed via a relationship. The Eloquent collection object extends Laravel's base collection, so it naturally inherits dozens of methods used to fluently work with the underlying array of Eloquent models. Be sure to review the Laravel collection documentation to learn all about these helpful methods!
+
+All collections also serve as iterators, allowing you to loop over them as if they were simple PHP arrays:
+```
+use App\Models\User;
+ 
+$users = User::where('active', 1)->get();
+ 
+foreach ($users as $user) {
+    echo $user->name;
+}
+```
+
+#### Available Methods
+All Eloquent collections extend the base Laravel collection object; therefore, they inherit all of the powerful methods provided by the base collection class.
+
+In addition, the Illuminate\Database\Eloquent\Collection class provides a superset of methods to aid with managing your model collections. Most methods return Illuminate\Database\Eloquent\Collection instances; however, some methods, like modelKeys, return an ```Illuminate\Support\Collection``` instance.
+```
+contains
+diff
+except
+find
+fresh
+intersect
+load
+loadMissing
+modelKeys
+makeVisible
+makeHidden
+only
+toQuery
+unique
+
+```
+
+method use you can find here https://laravel.com/docs/9.x/eloquent-collections
+#### Custom Collections
+If you would like to use a custom Collection object when interacting with a given model, you may define a newCollection method on your model:
+```
+<?php
+ 
+namespace App\Models;
+ 
+use App\Support\UserCollection;
+use Illuminate\Database\Eloquent\Model;
+ 
+class User extends Model
+{
+    /**
+     * Create a new Eloquent Collection instance.
+     *
+     * @param  array  $models
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    public function newCollection(array $models = [])
+    {
+        return new UserCollection($models);
+    }
+}
+
+```
