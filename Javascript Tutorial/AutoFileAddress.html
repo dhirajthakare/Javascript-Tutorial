@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <script src="https://cc-cdn.com/generic/scripts/v1/cc_c2a.min.js"></script>
+
+</head>
+<body>
+    
+    <h1>Write here Postcode fields </h1>
+<script>
+    var cc_object = new clickToAddress({
+            accessToken: "{!! '674c3-d013e-970d7-0763d' !!}",
+            domMode: 'class', // Use names to find form elements
+            defaultCountry: 'gbr',
+            countryLanguage: 'en',
+            enabledCountries: ['gbr']
+        });
+
+        if ($(".auto_search3")[0]){ // an class which available then only search address work
+            cc_object.attach({
+                search:		'auto_search3', // class name should be here 
+                town:		'auto_town3',
+                county:		'auto_county3',
+                line_1:		'auto_addr_line_13',
+                line_2:		'auto_addr_line_23',
+                postcode:	'auto_search3'
+            }),
+            {}
+        }
+</script>
+</body>
+</html>
