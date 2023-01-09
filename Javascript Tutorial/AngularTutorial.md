@@ -481,6 +481,7 @@ an observable which closes over its producer.
 an observable which completes.
 ### Infinite observable -
 an observable which never completes.
-Unicast observable - an observable whose emitted values are not shared amongst subscribers.
+### Unicast observable -
+an observable whose emitted values are not shared amongst subscribers.
 ### Multicast observable -
 an observable whose emitted values are shared amongst subscribers.
