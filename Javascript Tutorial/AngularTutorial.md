@@ -485,3 +485,22 @@ an observable which never completes.
 an observable whose emitted values are not shared amongst subscribers.
 ### Multicast observable -
 an observable whose emitted values are shared amongst subscribers.
+
+## LVY
+
+### What is IVY? 
+Ivy is the pipeline of rendering and compilation of the next-generation. It is very advanced and offers advanced features that were not available before. The speed provided by it is amazing. The loading is very fast even in the networks that are slow. It is very simple to use without any complications. The bundle size is also reduced with its help. It was first available in the Angular version 8 with Angular Ivy opt-in.
+
+Ivy is a complete rewrite of Angular’s rendering engine. In fact, it is the fourth rewrite of the engine and the third since Angular 2. But unlike rewrites two and three, Ivy promises huge improvements to your application. With Ivy, you can compile components more independently of each other. This improves development times since recompiling an application will only involve compiling the components that changed. 
+
+### Concepts of IVY
+
+Locality and tree shaking are two key aspects that Ivy always considers. They both are able to make Ivy capable of what it can do. The process of independent compilation of every component with its information. The partial changes are compiled in the process that makes the process faster by not changing all the project files. 
+
+#### Tree Shaking
+Tree shaking is a term that means removing unused code during the bundling process. This can be done by using tools like Rollup and Uglify ,During the build process, tree shaking tools use static analysis and eliminate the unused and unreferenced code .
+
+#### Locality
+The locality is the process of compiling each component independently with its own local information that rebuilds faster by compiling partial changes and not the entire project files. This increases the speed of your build process.
+
+
