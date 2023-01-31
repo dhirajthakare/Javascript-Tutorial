@@ -1164,6 +1164,60 @@ Arrow functions allow us to write shorter function syntax:
 ```
 let myFunction = (a, b) => a * b;
 ```
+
+## Destructuring
+To illustrate destructuring, we'll make a sandwich. Do you take everything out of the refrigerator to make your sandwich? No, you only take out the items you would like to use on your sandwich.
+
+Destructuring is exactly the same. We may have an array or object that we are working with, but we only need some of the items contained in these.
+
+Destructuring makes it easy to extract only what is needed.
+
+### Destructing Arrays
+
+```
+const vehicles = ['mustang', 'f-150', 'expedition'];
+
+const [car, truck, suv] = vehicles;
+
+```
+
+### Destructuring Objects
+
+```
+const vehicleOne = {
+  brand: 'Ford',
+  model: 'Mustang',
+  type: 'car',
+  year: 2021, 
+  color: 'red',
+  registration: {
+    city: 'Houston',
+    state: 'Texas',
+    country: 'USA'
+  }
+}
+
+myVehicle(vehicleOne)
+
+function myVehicle({ model, registration: { state } }) {
+  const message = 'My ' + model + ' is registered in ' + state + '.';
+}
+
+```
+
+##### Use destructuring to extract only the third item from the array, into a variable named suv.
+
+```
+
+
+const vehicles = ['mustang', 'f-150', 'expedition'];
+
+const [
+,,suv
+] = vehicles;
+
+
+```
 ## JavaScript Classes
 ECMAScript 2015, also known as ES6, introduced JavaScript Classes.
 
