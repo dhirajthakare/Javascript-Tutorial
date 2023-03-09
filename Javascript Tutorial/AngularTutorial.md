@@ -503,4 +503,75 @@ Tree shaking is a term that means removing unused code during the bundling proce
 #### Locality
 The locality is the process of compiling each component independently with its own local information that rebuilds faster by compiling partial changes and not the entire project files. This increases the speed of your build process.
 
+### View encapsulation
 
+##### three type of View encapsulation
+
+#### ViewEncapsulation.None
+The styles of components are added to the <head> of the document, making them available throughout the application, so are completely global and affect any matching elements within the document.
+
+  ```
+  @Component({
+  selector: 'app-no-encapsulation',
+  template: `
+    <h2>None</h2>
+    <div class="none-message">No encapsulation</div>
+  `,
+  styles: ['h2, .none-message { color: red; }'],
+  encapsulation: ViewEncapsulation.None,
+})
+export class NoEncapsulationComponent { }
+  ```
+Angular adds the styles for this component as global styles to the <head> of the document.
+
+As already mentioned, Angular also adds the styles to all shadow DOM hosts, making the styles available throughout the whole application.
+
+### ViewEncapsulation.Emulated
+The styles of components are added to the <head> of the document, making them available throughout the application, but their selectors only affect elements within their respective components' templates.
+
+```
+@Component({
+  selector: 'app-emulated-encapsulation',
+  template: `
+    <h2>Emulated</h2>
+    <div class="emulated-message">Emulated encapsulation</div>
+    <app-no-encapsulation></app-no-encapsulation>
+  `,
+  styles: ['h2, .emulated-message { color: green; }'],
+  encapsulation: ViewEncapsulation.Emulated,
+})
+export class EmulatedEncapsulationComponent { }
+```
+
+Comparable to ViewEncapsulation.None, Angular adds the styles for this component to the <head> of the document, but with "scoped" styles.
+
+Only the elements directly within this component's template are going to match its styles. Since the "scoped" styles from the EmulatedEncapsulationComponent are specific, they override the global styles from the NoEncapsulationComponent.
+
+In this example, the EmulatedEncapsulationComponent contains a NoEncapsulationComponent, but NoEncapsulationComponent is still styled as expected since the EmulatedEncapsulationComponent 's "scoped" styles do not match elements in its template.
+
+#### ViewEncapsulation.ShadowDom
+	The styles of components are only added to the shadow DOM host, ensuring that they only affect elements within their respective components' views.
+  
+  ```
+  @Component({
+  selector: 'app-shadow-dom-encapsulation',
+  template: `
+    <h2>ShadowDom</h2>
+    <div class="shadow-message">Shadow DOM encapsulation</div>
+    <app-emulated-encapsulation></app-emulated-encapsulation>
+    <app-no-encapsulation></app-no-encapsulation>
+  `,
+  styles: ['h2, .shadow-message { color: blue; }'],
+  encapsulation: ViewEncapsulation.ShadowDom,
+})
+export class ShadowDomEncapsulationComponent { }
+  ```
+  
+  In this example, the ShadowDomEncapsulationComponent contains both a NoEncapsulationComponent and EmulatedEncapsulationComponent.
+
+The styles added by the ShadowDomEncapsulationComponent component are available throughout the shadow DOM of this component, and so to both the NoEncapsulationComponent and EmulatedEncapsulationComponent.
+
+The EmulatedEncapsulationComponent has specific "scoped" styles, so the styling of this component's template is unaffected.
+
+Since styles from ShadowDomEncapsulationComponent are added to the shadow host after the global styles, the h2 style overrides the style from the NoEncapsulationComponent. The result is that the <h2> element in the NoEncapsulationComponent is colored blue rather than red, which may not be what the component's author intended.
+  
