@@ -573,5 +573,5 @@ The styles added by the ShadowDomEncapsulationComponent component are available 
 
 The EmulatedEncapsulationComponent has specific "scoped" styles, so the styling of this component's template is unaffected.
 
-Since styles from ShadowDomEncapsulationComponent are added to the shadow host after the global styles, the h2 style overrides the style from the NoEncapsulationComponent. The result is that the <h2> element in the NoEncapsulationComponent is colored blue rather than red, which may not be what the component's author intended.
+Since styles from ShadowDomEncapsulationComponent are added to the shadow host after the global styles, the h2 style overrides the style from the NoEncapsulationComponent. The result is that the h2 element in the NoEncapsulationComponent is colored blue rather than red, which may not be what the component's author intended.
   
