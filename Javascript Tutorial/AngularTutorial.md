@@ -550,7 +550,7 @@ Only the elements directly within this component's template are going to match i
 In this example, the EmulatedEncapsulationComponent contains a NoEncapsulationComponent, but NoEncapsulationComponent is still styled as expected since the EmulatedEncapsulationComponent 's "scoped" styles do not match elements in its template.
 
 #### ViewEncapsulation.ShadowDom
-	The styles of components are only added to the shadow DOM host, ensuring that they only affect elements within their respective components' views.
+The styles of components are only added to the shadow DOM host, ensuring that they only affect elements within their respective components' views.
   
   ```
   @Component({
@@ -567,7 +567,7 @@ In this example, the EmulatedEncapsulationComponent contains a NoEncapsulationCo
 export class ShadowDomEncapsulationComponent { }
   ```
   
-  In this example, the ShadowDomEncapsulationComponent contains both a NoEncapsulationComponent and EmulatedEncapsulationComponent.
+ In this example, the ShadowDomEncapsulationComponent contains both a NoEncapsulationComponent and EmulatedEncapsulationComponent.
 
 The styles added by the ShadowDomEncapsulationComponent component are available throughout the shadow DOM of this component, and so to both the NoEncapsulationComponent and EmulatedEncapsulationComponent.
 
