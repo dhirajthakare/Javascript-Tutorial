@@ -575,3 +575,63 @@ The EmulatedEncapsulationComponent has specific "scoped" styles, so the styling 
 
 Since styles from ShadowDomEncapsulationComponent are added to the shadow host after the global styles, the h2 style overrides the style from the NoEncapsulationComponent. The result is that the h2 element in the NoEncapsulationComponent is colored blue rather than red, which may not be what the component's author intended.
   
+### Content projection
+Content projection is a pattern in which you insert, or project, the content you want to use inside another component. For example, you could have a Card component that accepts content provided by another component.
+
+#### Single-slot content projection
+With this type of content projection, a component accepts content from a single source.
+
+ 
+define following tag in child componant
+```
+ <ng-content></ng-content>
+
+```
+parent componant call chld using following code
+
+```
+<app-zippy-basic>
+  <p>Is content projection cool?</p>
+</app-zippy-basic>
+```
+
+#### Multi-slot content projection
+In this scenario, a component accepts content from multiple sources.
+
+To create a component that uses multi-slot content projection:
+
+Create a component.
+
+In the template for your component, add an <ng-content> element where you want the projected content to appear.
+
+Add a select attribute to the <ng-content> elements. Angular supports selectors for any combination of tag name, attribute, CSS class, and the :not pseudo-class.
+
+For example, the following component uses two <ng-content> elements.
+
+```
+  Default:
+    <ng-content></ng-content>
+
+    Question:
+    <ng-content select="[question]"></ng-content>
+```
+
+```
+<app-zippy-multislot>
+  <p question>
+    Is content projection cool?
+  </p>
+  <p>Let's learn about content projection!</p>
+</app-zippy-multislot>
+```
+If your component includes an <ng-content> element without a select attribute, that instance receives all projected components that do not match any of the other <ng-content> elements.
+
+In the preceding example, only the second <ng-content> element defines a select attribute. As a result, the first <ng-content> element receives any other content projected into the component.
+
+#### Conditional content projection	
+Components that use conditional content projection render content only when specific conditions are met.
+
+If your component needs to conditionally render content, or render content multiple times, you should configure that component to accept an <ng-template> element that contains the content you want to conditionally render.
+
+Using an <ng-content> element in these cases is not recommended, because when the consumer of a component supplies the content, that content is always initialized, even if the component does not define an <ng-content> element or if that <ng-content> element is inside of an ngIf statement.
+
