@@ -1,8 +1,6 @@
 ### 1 what is Dispatcher 
 It facilitates interaction between objects in Node. A Dispatcher is a service object that is used to ensure that the Event is passed to all relevant Listeners
 
-### 2 Lazy-loading feature modules
-By default, NgModules are eagerly loaded, which means that as soon as the application loads, so do all the NgModules, whether or not they are immediately necessary. For large applications with lots of routes, consider lazy loading —a design pattern that loads NgModules as needed. Lazy loading helps keep initial bundle sizes smaller, which in turn helps decrease load times.
 
 ### 3 How to Use Buffers in Node.js
 
